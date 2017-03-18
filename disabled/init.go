@@ -1,4 +1,4 @@
-package xray
+package disabled
 
 import (
 	"github.com/Sirupsen/logrus"
@@ -13,6 +13,6 @@ var (
 
 func init() {
 	config.AfterInit(func() {
-		log = logger.New().WithField("pkg", "tracer/xray")
+		log = logger.New().WithField("pkg", "tracer/disabled")
 	})
 }
