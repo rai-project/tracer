@@ -1,0 +1,5 @@
+tracer:
+  enabled: true
+zipkin:
+  endpoints:
+    - http://ec2-34-225-193-157.compute-1.amazonaws.com:9411/api/v1/spans

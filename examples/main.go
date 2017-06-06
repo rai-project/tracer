@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -20,8 +21,13 @@ func uServiceCall(ctx context.Context) {
 }
 
 func main() {
-	config.Init()
+	config.Init(
+		config.VerboseMode(true),
+		config.DebugMode(true),
+		config.ColorMode(true),
+	)
 
+	fmt.Println("here")
 	// choose which tracing backend to use
 	tr := zipkin.NewTracer("test-tracer")
 

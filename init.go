@@ -1,6 +1,4 @@
-// +build !develop
-
-package zipkin
+package tracer
 
 import (
 	"github.com/Sirupsen/logrus"
@@ -15,6 +13,6 @@ var (
 
 func init() {
 	config.AfterInit(func() {
-		log = logger.New().WithField("pkg", "tracer/zipkin")
+		log = logger.New().WithField("pkg", "tracer")
 	})
 }
