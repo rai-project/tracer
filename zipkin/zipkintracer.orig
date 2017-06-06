@@ -1,0 +1,112 @@
+package zipkin
+
+import (
+	"context"
+	"fmt"
+	"io"
+
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/rai-project/tracer"
+	jaeger "github.com/uber/jaeger-client-go"
+	"github.com/uber/jaeger-client-go/thrift-gen/zipkincore"
+	"github.com/uber/jaeger-client-go/transport/zipkin"
+)
+
+type ZipkinTracer struct {
+	tracer opentracing.Tracer
+	closer io.Closer
+}
+
+func segmentFromSpan(sp *zipkincore.Span) *tracer.Segment {
+
+	sg := tracer.NewSegment()
+	sg.Lock()
+	defer sg.Unlock()
+	sg.Name = sp.GetName()
+	sg.Type = ""
+	sg.ID = fmt.Sprint(sp.GetID())
+	sg.TraceID = fmt.Sprint(sp.GetTraceID())
+	sg.ParentID = fmt.Sprint(sp.GetParentID())
+	sg.StartTime = sp.GetTimestamp()
+	sg.EndTime = sp.GetTimestamp() + sp.GetDuration()
+	sg.InProgress = true
+
+	return sg
+}
+
+func NewZipkinTracer(serviceName string) *ZipkinTracer {
+	trans, err := zipkin.NewHTTPTransport(
+		endpoint,
+		zipkin.HTTPBatchSize(1),
+		zipkin.HTTPLogger(jaeger.StdLogger),
+	)
+	if err != nil {
+		log.WithError(err).Error("Cannot initialize HTTP transport")
+	}
+	tr, cl := jaeger.NewTracer(
+		serviceName,
+		jaeger.NewConstSampler(true), // sample all traces
+		jaeger.NewRemoteReporter(trans),
+	)
+
+	opentracing.SetGlobalTracer(tr)
+
+	return &ZipkinTracer{tracer: tr, closer: cl}
+}
+
+func (t *ZipkinTracer) SegmentFromContext(ctx context.Context) *tracer.Segment {
+	panic("Unimplemented")
+}
+func (t *ZipkinTracer) NewChildSegment(parent *tracer.Segment) *tracer.Segment {
+	panic("Unimplemented")
+}
+
+func (t *ZipkinTracer) ContextWithSegment(orig context.Context, s *tracer.Segment) context.Context {
+	panic("Unimplemented")
+}
+
+func (t *ZipkinTracer) StartSegment() *tracer.Segment {
+	panic("Unimplemented")
+}
+
+// StartSegmentFromContext starts and returns a Segment with `operationName`,
+// using any Segment in the ctx as its parent. If none can be found,
+// StartSegmentFromContext creates a root (parentless) Segment
+//
+// The second return value is a context.Context object built around the
+// returned Segment.
+//
+// Example usage:
+//
+//    SomeFunction(ctx context.Context, ...) {
+//        sp, ctx := opentracing.StartSpanFromContext(ctx, "SomeFunction")
+//        defer sp.Finish()
+//        ...
+//    }
+func (t *ZipkinTracer) StartSegmentFromContext(ctx context.Context, operationName string) (*tracer.Segment, context.Context) {
+
+	// use opentracing to extract the span.
+	sp, ctx := opentracing.StartSpanFromContext(ctx, operationName)
+	sp.Finish()
+	// Since we are using the jaeger tracer, this will be a jaeger span
+	jsp, ok := sp.(*jaeger.Span)
+	if !ok {
+		log.Fatal("Expected jaeger span")
+	}
+
+	// convert the span to a Segment
+	zsp := jaeger.BuildZipkinThrift(jsp)
+	sg := segmentFromSpan(zsp)
+	return sg, ctx
+}
+
+func spanFromSegment(sg *tracer.Segment) *jaeger.Span {
+
+	jsc := 
+	jsp.
+	return nil
+}
+
+func (t *ZipkinTracer) Close() {
+	t.closer.Close()
+}

@@ -4,7 +4,7 @@ import (
 	"github.com/Sirupsen/logrus"
 
 	"github.com/rai-project/config"
-	logger "github.com/rai-project/logger"
+	"github.com/rai-project/logger"
 )
 
 var (

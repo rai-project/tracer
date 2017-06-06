@@ -5,26 +5,52 @@ import (
 	"fmt"
 	"time"
 
-	tracing "github.com/rai-project/tracer/zipkin"
+	"github.com/Sirupsen/logrus"
+	"github.com/rai-project/config"
+	"github.com/rai-project/logger"
+	tracer "github.com/rai-project/tracer"
+	zipkin "github.com/rai-project/tracer/zipkin"
 )
 
 func main() {
+	config.Init()
+
+	// choose which tracing backend to use
+	tr := zipkin.NewTracer("test-tracer")
+
+	// Use that tracer
+	tracer.SetGlobal(tr)
+
+	// make sure the tracer finishes its tracing when we're done
+	defer tr.Close()
+
+	// Create some demo segments
+	ctx := context.Background()
+	rootSg, ctx := tracer.StartSegmentFromContext(ctx, "root_segment")
+	defer rootSg.Finish()
+	time.Sleep(time.Millisecond * 500)
+
+	childSg, _ := tracer.StartSegmentFromContext(ctx, "child_segment")
+	defer childSg.Finish()
+	time.Sleep(time.Second)
+}
+
+func main2() {
 	// Create a new named tracer for this operation
-	// Configure p3sr-trace to use it for spans that come from here
-	tracer, closer := tracing.New("mlaas-client-inference")
+	tr, closer := zipkin.New("mlaas-client-inference")
 	defer func() {
 		closer.Close()
 		fmt.Println("closed")
 	}()
-	tracing.InitGlobalTracer(tracer)
+	zipkin.InitGlobalTracer(tr)
 
 	// Create a root span for this command
 	ctx := context.Background()
-	sp, ctx := tracing.StartSpanFromContext(ctx, "inference_root")
+	sp, ctx := zipkin.StartSpanFromContext(ctx, "inference_root")
 	time.Sleep(time.Millisecond * 500)
 	defer sp.Finish()
 
-	readSp, _ := tracing.StartSpanFromContext(ctx, "read_files")
+	readSp, _ := zipkin.StartSpanFromContext(ctx, "read_files")
 	time.Sleep(time.Second)
 	defer readSp.Finish()
 
@@ -34,4 +60,14 @@ func main() {
 	// }
 	// log.Info("Class : ", class)
 	return
+}
+
+var (
+	log *logrus.Entry
+)
+
+func init() {
+	config.AfterInit(func() {
+		log = logger.New().WithField("pkg", "tracer/examples")
+	})
 }

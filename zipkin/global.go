@@ -78,23 +78,23 @@ func init() {
 			return
 		}
 
-		log.Debug("Zipkin endpoint: ", endpoint)
-		trans, err := zipkin.NewHTTPTransport(
-			endpoint,
-			zipkin.HTTPBatchSize(1),
-			zipkin.HTTPLogger(jaeger.StdLogger),
-		)
-		if err != nil {
-			log.WithError(err).Error("Cannot initialize HTTP transport")
-		}
+		// log.Debug("Zipkin endpoint: ", endpoint)
+		// trans, err := zipkin.NewHTTPTransport(
+		// 	endpoint,
+		// 	zipkin.HTTPBatchSize(1),
+		// 	zipkin.HTTPLogger(jaeger.StdLogger),
+		// )
+		// if err != nil {
+		// 	log.WithError(err).Error("Cannot initialize HTTP transport")
+		// }
 
-		var tracer opentracing.Tracer
-		tracer, stdCloser = jaeger.NewTracer(
-			"global-tracer",
-			jaeger.NewConstSampler(true), // sample all traces
-			jaeger.NewRemoteReporter(trans),
-		)
-		opentracing.InitGlobalTracer(tracer)
+		// var tracer opentracing.Tracer
+		// tracer, stdCloser = jaeger.NewTracer(
+		// 	"global-tracer",
+		// 	jaeger.NewConstSampler(true), // sample all traces
+		// 	jaeger.NewRemoteReporter(trans),
+		// )
+		// opentracing.InitGlobalTracer(tracer)
 
 	})
 
