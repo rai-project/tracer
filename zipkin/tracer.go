@@ -10,6 +10,13 @@ import (
 	"github.com/uber/jaeger-client-go/transport/zipkin"
 )
 
+const (
+	endpoint = "http://ec2-34-225-193-157.compute-1.amazonaws.com:9411/api/v1/spans"
+	enable   = true
+)
+
+var opentracingGlobalTracerIsSet bool
+
 type Tracer struct {
 	tracer opentracing.Tracer
 	closer io.Closer
@@ -30,8 +37,10 @@ func NewTracer(serviceName string) *Tracer {
 		jaeger.NewRemoteReporter(trans),
 	)
 
+	if _, ok := opentracing.GlobalTracer().(opentracing.NoopTracer); !ok {
+		log.Error("Expecting global tracer to be uninitialized")
+	}
 	opentracing.SetGlobalTracer(tr)
-
 	return &Tracer{tracer: tr, closer: cl}
 }
 

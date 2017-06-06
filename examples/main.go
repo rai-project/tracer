@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -43,33 +42,6 @@ func main() {
 	childSg.Finish()
 
 	uServiceCall(ctx)
-}
-
-func main2() {
-	// Create a new named tracer for this operation
-	tr, closer := zipkin.New("mlaas-client-inference")
-	defer func() {
-		closer.Close()
-		fmt.Println("closed")
-	}()
-	zipkin.InitGlobalTracer(tr)
-
-	// Create a root span for this command
-	ctx := context.Background()
-	sp, ctx := zipkin.StartSpanFromContext(ctx, "inference_root")
-	time.Sleep(time.Millisecond * 500)
-	defer sp.Finish()
-
-	readSp, _ := zipkin.StartSpanFromContext(ctx, "read_files")
-	time.Sleep(time.Second)
-	defer readSp.Finish()
-
-	// class, err := client.Inference(ctx, data, userID, modelID)
-	// if err != nil {
-	// 	log.WithError(err).Fatal()
-	// }
-	// log.Info("Class : ", class)
-	return
 }
 
 var (
