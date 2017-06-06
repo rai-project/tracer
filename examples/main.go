@@ -11,12 +11,26 @@ import (
 	zipkin "github.com/rai-project/tracer/zipkin"
 )
 
-func uServiceCall(ctx context.Context) {
+func uServiceCall1(ctx context.Context) context.Context {
 	time.Sleep(time.Millisecond * 125) // slow startup
-	sg, _ := tracer.StartSegmentFromContext(ctx, "service call")
+	sg, ctx := tracer.StartSegmentFromContext(ctx, "service call 1")
 	defer sg.Finish()
 
-	time.Sleep(time.Millisecond * 333) // some work
+	time.Sleep(time.Millisecond * 333) // some local work
+
+	ctx = uServiceCall2(ctx)
+
+	return ctx
+}
+
+func uServiceCall2(ctx context.Context) context.Context {
+	time.Sleep(time.Millisecond * 125) // slow startup
+	sg, ctx := tracer.StartSegmentFromContext(ctx, "service call 2")
+	defer sg.Finish()
+
+	time.Sleep(time.Millisecond * 333) // some local work
+
+	return ctx
 }
 
 func main() {
@@ -45,7 +59,7 @@ func main() {
 	time.Sleep(time.Second)
 	childSg.Finish()
 
-	uServiceCall(ctx)
+	uServiceCall1(ctx)
 }
 
 var (
