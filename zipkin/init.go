@@ -14,7 +14,7 @@ var (
 )
 
 func init() {
-	config.AfterInit(func() {
+	config.BeforeInit(func() {
 		log = logger.New().WithField("pkg", "tracer/zipkin")
 	})
 }

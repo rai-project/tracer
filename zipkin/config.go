@@ -31,7 +31,6 @@ func (a *zipkinConfig) Read() {
 	if len(a.Endpoints) == 0 {
 		log.Warn("No zipkin endpoints set")
 	}
-	log.Debug(a.Endpoints)
 }
 
 func (c zipkinConfig) Wait() {

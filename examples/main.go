@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -27,7 +26,6 @@ func main() {
 		config.ColorMode(true),
 	)
 
-	fmt.Println("here")
 	// choose which tracing backend to use
 	tr := zipkin.NewTracer("test-tracer")
 

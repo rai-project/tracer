@@ -2,6 +2,7 @@ package zipkin
 
 import (
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/rai-project/tracer"
 )
 
 type Segment struct {
@@ -9,5 +10,7 @@ type Segment struct {
 }
 
 func (s *Segment) Finish() {
-	s.span.Finish()
+	if tracer.Config.Enabled {
+		s.span.Finish()
+	}
 }

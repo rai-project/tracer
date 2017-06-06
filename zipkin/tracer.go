@@ -10,11 +10,6 @@ import (
 	"github.com/uber/jaeger-client-go/transport/zipkin"
 )
 
-const (
-	endpoint = "http://ec2-34-225-193-157.compute-1.amazonaws.com:9411/api/v1/spans"
-	enable   = true
-)
-
 var opentracingGlobalTracerIsSet bool
 
 type Tracer struct {
@@ -24,7 +19,7 @@ type Tracer struct {
 
 func NewTracer(serviceName string) *Tracer {
 	trans, err := zipkin.NewHTTPTransport(
-		endpoint,
+		Config.Endpoints[0],
 		zipkin.HTTPBatchSize(1),
 		zipkin.HTTPLogger(jaeger.StdLogger),
 	)
@@ -33,7 +28,7 @@ func NewTracer(serviceName string) *Tracer {
 	}
 	tr, cl := jaeger.NewTracer(
 		serviceName,
-		jaeger.NewConstSampler(true), // sample all traces
+		jaeger.NewConstSampler(true /*sample all*/),
 		jaeger.NewRemoteReporter(trans),
 	)
 
