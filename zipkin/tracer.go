@@ -3,6 +3,7 @@ package zipkin
 import (
 	"context"
 	"io"
+	"net/http"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/rai-project/tracer"
@@ -79,4 +80,12 @@ func (t *Tracer) StartSegmentFromContext(ctx context.Context, operationName stri
 
 func (t *Tracer) Close() {
 	t.closer.Close()
+}
+
+func (t *Tracer) Inject(c *SegmentContext, req *http.Request) error {
+	return t.tracer.Inject(
+		c.sc,
+		opentracing.TextMap,
+		opentracing.HTTPHeadersCarrier(req.Header),
+	)
 }
