@@ -1,5 +1,6 @@
 package tracer
 
+// Segment is analogous to an OpenTracing span
 type Segment interface {
 	// sync.RWMutex
 	// Name       string `json:"name,omitempty"`
@@ -12,10 +13,11 @@ type Segment interface {
 	// InProgress bool   `json:"in_progress,omitempty"`
 	Finish()
 	SetTag(key string, value interface{}) Segment
-	// Inject the Span context into the outgoing HTTP Request.
-
+	SetHTTPPath(value string)
+	SetHTTPHost(value string)
 	Context() SegmentContext
 }
 
+// SegmentContext holds any internal state needed for managing Segments
 type SegmentContext interface {
 }

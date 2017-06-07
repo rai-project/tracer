@@ -12,6 +12,7 @@ type tracerConfig struct {
 }
 
 var (
+	// Config holds the data read by rai-project/config
 	Config = &tracerConfig{
 		done: make(chan struct{}),
 	}
@@ -21,13 +22,13 @@ func (tracerConfig) ConfigName() string {
 	return "Tracer"
 }
 
-func (a *tracerConfig) SetDefaults() {
-	vipertags.SetDefaults(a)
+func (c *tracerConfig) SetDefaults() {
+	vipertags.SetDefaults(c)
 }
 
-func (a *tracerConfig) Read() {
-	defer close(a.done)
-	vipertags.Fill(a)
+func (c *tracerConfig) Read() {
+	defer close(c.done)
+	vipertags.Fill(c)
 }
 
 func (c tracerConfig) Wait() {

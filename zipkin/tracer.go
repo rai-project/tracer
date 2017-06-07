@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/rai-project/tracer"
 	jaeger "github.com/uber/jaeger-client-go"
 	"github.com/uber/jaeger-client-go/transport/zipkin"
@@ -51,8 +52,9 @@ func (t *Tracer) ContextWithSegment(orig context.Context, s tracer.Segment) cont
 	panic("Unimplemented")
 }
 
-func (t *Tracer) StartSegment() tracer.Segment {
-	panic("Unimplemented")
+func (t *Tracer) StartSegment(operationName string, wireContext SegmentContext) tracer.Segment {
+	span := t.tracer.StartSpan(operationName, ext.RPCServerOption(wireContext.sc))
+	return &Segment{span: span}
 }
 
 // StartSegmentFromContext starts and returns a Segment with `operationName`,
@@ -88,4 +90,12 @@ func (t *Tracer) Inject(c *SegmentContext, req *http.Request) error {
 		opentracing.TextMap,
 		opentracing.HTTPHeadersCarrier(req.Header),
 	)
+}
+
+func (t *Tracer) Extract(req *http.Request) (tracer.SegmentContext, error) {
+	wireContext, err := t.tracer.Extract(
+		opentracing.TextMap,
+		opentracing.HTTPHeadersCarrier(req.Header),
+	)
+	return &SegmentContext{sc: wireContext}, err
 }

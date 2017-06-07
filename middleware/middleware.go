@@ -2,12 +2,8 @@ package middleware
 
 import (
 	"fmt"
-	"net"
 	"net/http"
-	"strconv"
 
-	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/rai-project/tracer"
 )
 
@@ -17,7 +13,7 @@ type RequestFunc func(req *http.Request) *http.Request
 // ToHTTPRequest returns a RequestFunc that injects an OpenTracing Span found in
 // context into the HTTP Headers. If no such Span can be found, the RequestFunc
 // is a noop.
-func ToHTTPRequest(tracer tracer.Tracer) RequestFunc {
+func ToHTTPRequest(tr tracer.Tracer) RequestFunc {
 	return func(req *http.Request) *http.Request {
 		// Retrieve the Span from context.
 		if sg := tracer.SegmentFromContext(req.Context()); sg != nil {
@@ -29,8 +25,8 @@ func ToHTTPRequest(tracer tracer.Tracer) RequestFunc {
 			// Add some standard OpenTracing tags, useful in an HTTP request.
 			// ext.HTTPMethod.Set(span, req.Method)
 			// sg.SetHTTPMethod(req.Method) // TODO?
-			// sg.SetTag(zipkincore.HTTP_HOST, req.URL.Host) // TODO?
-			// sg.SetTag(zipkincore.HTTP_PATH, req.URL.Path) // TODO?
+			sg.SetHTTPHost(req.URL.Host)
+			sg.SetHTTPPath(req.URL.Path)
 			// ext.HTTPUrl.Set(
 			// 	span,
 			// 	fmt.Sprintf("%s://%s%s", req.URL.Scheme, req.URL.Host, req.URL.Path),
@@ -38,24 +34,24 @@ func ToHTTPRequest(tracer tracer.Tracer) RequestFunc {
 			// sg.SetHTTPUrl(fmt.Sprintf("%s://%s%s", req.URL.Scheme, req.URL.Host, req.URL.Path)) // TODO?
 
 			// Add information on the peer service we're about to contact.
-			if host, portString, err := net.SplitHostPort(req.URL.Host); err == nil {
-				// ext.PeerHostname.Set(span, host)
-				// sg.SetPeerHostname(host) // TODO?
-				if port, err := strconv.Atoi(portString); err != nil {
-					// ext.PeerPort.Set(span, uint16(port))
-					// sg.SetPeerPort(uint16(port)) // TODO?
-				}
-			} else {
-				// ext.PeerHostname.Set(span, req.URL.Host)
-				// sg.SetPeerHostname(req.URL.host) // TODO?
-			}
+			// if host, portString, err := net.SplitHostPort(req.URL.Host); err == nil {
+			// ext.PeerHostname.Set(span, host)
+			// sg.SetPeerHostname(host) // TODO?
+			// if port, err := strconv.Atoi(portString); err != nil {
+			// ext.PeerPort.Set(span, uint16(port))
+			// sg.SetPeerPort(uint16(port)) // TODO?
+			// }
+			// } else {
+			// ext.PeerHostname.Set(span, req.URL.Host)
+			// sg.SetPeerHostname(req.URL.host) // TODO?
+			// }
 
 			// Inject the Span context into the outgoing HTTP Request.
 			// if err := tracer.Inject(
 			// 	sg.Context(),
 			// 	opentracing.TextMap,
 			// 	opentracing.HTTPHeadersCarrier(req.Header),
-			if err := tracer.Inject(sg.Context(), req); err != nil {
+			if err := tr.Inject(sg.Context(), req); err != nil {
 				fmt.Printf("error encountered while trying to inject span: %+v", err)
 			}
 		}
@@ -78,16 +74,14 @@ func FromHTTPRequest(tracer tracer.Tracer, operationName string,
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			// Try to join to a trace propagated in `req`.
-			wireContext, err := tracer.Extract(
-				opentracing.TextMap,
-				opentracing.HTTPHeadersCarrier(req.Header),
-			)
+
+			wireContext, err := tracer.Extract(req)
 			if err != nil {
 				fmt.Printf("error encountered while trying to extract span: %+v\n", err)
 			}
 
 			// create segment
-			sg := tracer.StartSegment(operationName, ext.RPCServerOption(wireContext))
+			sg := tracer.StartSegment(operationName, wireContext)
 			sg.SetTag("serverSide", "here")
 			defer sg.Finish()
 
