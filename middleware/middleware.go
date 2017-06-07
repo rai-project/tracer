@@ -77,11 +77,14 @@ func FromHTTPRequest(tracer tracer.Tracer, operationName string,
 
 			wireContext, err := tracer.Extract(req)
 			if err != nil {
-				fmt.Printf("error encountered while trying to extract span: %+v\n", err)
+				log.WithError(err).Error("error while trying to extract span: %+v\n", err)
 			}
 
 			// create segment
-			sg := tracer.StartSegment(operationName, wireContext)
+			sg, err := tracer.StartSegment(operationName, wireContext)
+			if err != nil {
+				log.WithError(err).Error("Unable to start segment.")
+			}
 			sg.SetTag("serverSide", "here")
 			defer sg.Finish()
 
