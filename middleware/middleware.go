@@ -64,11 +64,11 @@ func ToHTTPRequest(tr tracer.Tracer) RequestFunc {
 type HandlerFunc func(next http.Handler) http.Handler
 
 // FromHTTPRequest returns a Middleware HandlerFunc that tries to join with an
-// OpenTracing trace found in the HTTP request headers and starts a new Span
+// rai-project trace found in the HTTP request headers and starts a new Segment
 // called `operationName`. If no trace could be found in the HTTP request
-// headers, the Span will be a trace root. The Span is incorporated in the
+// headers, the Segment will be a trace root. The Segment is incorporated in the
 // HTTP Context object and can be retrieved with
-// opentracing.SpanFromContext(ctx).
+// tracer.SegmentFromContext(ctx).
 func FromHTTPRequest(tracer tracer.Tracer, operationName string,
 ) HandlerFunc {
 	return func(next http.Handler) http.Handler {
