@@ -10,7 +10,7 @@ type Tracer interface {
 	// NewChildSegment(parent Segment) Segment
 	// ContextWithSegment stores a Segment in a context
 	ContextWithSegment(orig context.Context, s Segment) context.Context
-	StartSegment(operationName string, c SegmentContext) Segment
+	StartSegment(operationName string, c SegmentContext) (Segment, error)
 	StartSegmentFromContext(ctx context.Context, operationName string) (Segment, context.Context)
 	Close()
 	// Inject the SegmentContext into the outgoing HTTP Request.
@@ -36,7 +36,7 @@ func ContextWithSegment(orig context.Context, s Segment) context.Context {
 	return stdTracer.ContextWithSegment(orig, s)
 }
 
-func StartSegment(operationName string, c SegmentContext) Segment {
+func StartSegment(operationName string, c SegmentContext) (Segment, error) {
 	return stdTracer.StartSegment(operationName, c)
 }
 

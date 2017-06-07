@@ -2,6 +2,7 @@ package zipkin
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -52,9 +53,13 @@ func (t *Tracer) ContextWithSegment(orig context.Context, s tracer.Segment) cont
 	panic("Unimplemented")
 }
 
-func (t *Tracer) StartSegment(operationName string, wireContext SegmentContext) tracer.Segment {
+func (t *Tracer) StartSegment(operationName string, sc tracer.SegmentContext) (tracer.Segment, error) {
+	wireContext, ok := sc.(*SegmentContext)
+	if !ok {
+		return nil, errors.New("Starting segment from something that is not a zipkin.SegmentContext")
+	}
 	span := t.tracer.StartSpan(operationName, ext.RPCServerOption(wireContext.sc))
-	return &Segment{span: span}
+	return &Segment{span: span}, nil
 }
 
 // StartSegmentFromContext starts and returns a Segment with `operationName`,
@@ -84,9 +89,15 @@ func (t *Tracer) Close() {
 	t.closer.Close()
 }
 
-func (t *Tracer) Inject(c *SegmentContext, req *http.Request) error {
+func (t *Tracer) Inject(c tracer.SegmentContext, req *http.Request) error {
+
+	sm, ok := c.(*SegmentContext)
+	if !ok {
+		return errors.New("Injecting something that is not a zipkin.SegmentContext")
+	}
+
 	return t.tracer.Inject(
-		c.sc,
+		sm.sc,
 		opentracing.TextMap,
 		opentracing.HTTPHeadersCarrier(req.Header),
 	)
