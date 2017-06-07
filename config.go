@@ -7,7 +7,8 @@ import (
 )
 
 type tracerConfig struct {
-	Enabled bool          `json:"enabled" config:"tracer.enabled"`
+	Enabled bool          `json:"enabled" config:"tracer.enabled" default:"true"`
+	Backend string        `json:"backend" config:"tracer.backend" default:"zipkin"`
 	done    chan struct{} `json:"-" config:"-"`
 }
 

@@ -7,7 +7,7 @@ import (
 )
 
 type zipkinConfig struct {
-	Endpoints []string      `json:"endpoints" config:"zipkin.endpoints"`
+	Endpoints []string      `json:"endpoints" config:"zipkin.endpoints" default:"http://ec2-34-225-193-157.compute-1.amazonaws.com:9411/api/v1/spans"`
 	done      chan struct{} `json:"-" config:"-"`
 }
 
@@ -28,9 +28,6 @@ func (a *zipkinConfig) SetDefaults() {
 func (a *zipkinConfig) Read() {
 	defer close(a.done)
 	vipertags.Fill(a)
-	if len(a.Endpoints) == 0 {
-		log.Warn("No zipkin endpoints set")
-	}
 }
 
 func (c zipkinConfig) Wait() {

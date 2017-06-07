@@ -16,13 +16,16 @@ import (
 var opentracingGlobalTracerIsSet bool
 
 type Tracer struct {
-	tracer opentracing.Tracer
-	closer io.Closer
+	tracer   opentracing.Tracer
+	closer   io.Closer
+	endpoint string
+	name     string
 }
 
 func NewTracer(serviceName string) *Tracer {
+	endpoint := Config.Endpoints[0]
 	trans, err := zipkin.NewHTTPTransport(
-		Config.Endpoints[0],
+		endpoint,
 		zipkin.HTTPBatchSize(1),
 		zipkin.HTTPLogger(jaeger.StdLogger),
 	)
@@ -39,18 +42,24 @@ func NewTracer(serviceName string) *Tracer {
 		log.Error("Expecting global tracer to be uninitialized")
 	}
 	opentracing.SetGlobalTracer(tr)
-	return &Tracer{tracer: tr, closer: cl}
+	return &Tracer{tracer: tr, closer: cl, endpoint: endpoint, name: serviceName}
 }
 
 func (t *Tracer) SegmentFromContext(ctx context.Context) tracer.Segment {
-	panic("Unimplemented")
+	panic("tracer/zipkin/Segment from Context Unimplemented")
 }
 func (t *Tracer) NewChildSegment(parent tracer.Segment) tracer.Segment {
-	panic("Unimplemented")
+	panic("NewChildSegment Unimplemented")
 }
 
 func (t *Tracer) ContextWithSegment(orig context.Context, s tracer.Segment) context.Context {
-	panic("Unimplemented")
+
+	sg, ok := s.(*Segment)
+	if !ok {
+		return orig
+	}
+
+	return opentracing.ContextWithSpan(orig, sg.span)
 }
 
 func (t *Tracer) StartSegment(operationName string, sc tracer.SegmentContext) (tracer.Segment, error) {
@@ -109,4 +118,12 @@ func (t *Tracer) Extract(req *http.Request) (tracer.SegmentContext, error) {
 		opentracing.HTTPHeadersCarrier(req.Header),
 	)
 	return &SegmentContext{sc: wireContext}, err
+}
+
+func (t *Tracer) Endpoint() string {
+	return t.endpoint
+}
+
+func (t *Tracer) Name() string {
+	return t.name
 }

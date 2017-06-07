@@ -15,9 +15,7 @@ type SegmentContext struct {
 }
 
 func (s *Segment) Finish() {
-	if tracer.Config.Enabled {
-		s.span.Finish()
-	}
+	s.span.Finish()
 }
 
 func (s *Segment) Context() tracer.SegmentContext {

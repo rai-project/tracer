@@ -17,10 +17,16 @@ type Tracer interface {
 	Inject(c SegmentContext, r *http.Request) error
 	// Extract a Segment from a request
 	Extract(req *http.Request) (SegmentContext, error)
+	Endpoint() string
+	Name() string
 }
 
 func SetGlobal(t Tracer) {
 	stdTracer = t
+}
+
+func Global() Tracer {
+	return stdTracer
 }
 
 func SegmentFromContext(ctx context.Context) Segment {
@@ -46,4 +52,12 @@ func StartSegmentFromContext(ctx context.Context, operationName string) (Segment
 
 func Close() {
 	stdTracer.Close()
+}
+
+func Enabled() bool {
+	return Config.Enabled
+}
+
+func Backend() string {
+	return Config.Backend
 }

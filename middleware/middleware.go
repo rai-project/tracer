@@ -74,6 +74,7 @@ func FromHTTPRequest(tracer tracer.Tracer, operationName string,
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			// Try to join to a trace propagated in `req`.
+			fmt.Println(tracer.Name(), tracer.Endpoint())
 
 			wireContext, err := tracer.Extract(req)
 			if err != nil {
@@ -86,16 +87,23 @@ func FromHTTPRequest(tracer tracer.Tracer, operationName string,
 				log.WithError(err).Error("Unable to start segment.")
 			}
 			sg.SetTag("serverSide", "here")
-			defer sg.Finish()
+			defer func() {
+				sg.Finish()
+				fmt.Println("Finished segment")
+			}()
 
 			// store span in context
 			ctx := tracer.ContextWithSegment(req.Context(), sg)
+			fmt.Println("put segment in context")
 
 			// update request context to include our new span
 			req = req.WithContext(ctx)
+			fmt.Println("insert context into req")
 
 			// next middleware or actual request handler
+			fmt.Println("Calling next middleware...")
 			next.ServeHTTP(w, req)
+			fmt.Println("next middleware done")
 		})
 	}
 }

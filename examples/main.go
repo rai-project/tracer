@@ -69,5 +69,11 @@ var (
 func init() {
 	config.AfterInit(func() {
 		log = logger.New().WithField("pkg", "tracer/examples")
+
+		// choose which tracing backend to use
+		tr := zipkin.NewTracer("test-tracer")
+
+		// Use that tracer
+		tracer.SetGlobal(tr)
 	})
 }
