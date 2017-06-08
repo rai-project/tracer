@@ -1,4 +1,4 @@
-package disabled
+package noop
 
 import (
 	"github.com/sirupsen/logrus"
@@ -13,6 +13,6 @@ var (
 
 func init() {
 	config.AfterInit(func() {
-		log = logger.New().WithField("pkg", "tracer/disabled")
+		log = logger.New().WithField("pkg", "tracer/noop")
 	})
 }

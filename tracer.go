@@ -4,6 +4,7 @@ import (
 	"io"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/rai-project/tracer/noop"
 )
 
 type Tracer interface {
@@ -17,6 +18,7 @@ var stdTracer Tracer
 
 func SetStd(t Tracer) {
 	stdTracer = t
+	opentracing.SetGlobalTracer(t)
 }
 
 func Std() Tracer {
@@ -37,4 +39,9 @@ func Enabled() bool {
 
 func Backend() string {
 	return Config.Backend
+}
+
+func init() {
+	t, _ := noop.New("")
+	SetStd(t)
 }
