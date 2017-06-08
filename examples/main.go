@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/rai-project/config"
 	"github.com/rai-project/logger"
 	tracer "github.com/rai-project/tracer"
