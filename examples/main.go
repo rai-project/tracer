@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/rai-project/config"
 	"github.com/rai-project/logger"
 	tracer "github.com/rai-project/tracer"
 	zipkin "github.com/rai-project/tracer/zipkin"
+	"github.com/sirupsen/logrus"
 )
 
 func uServiceCall1(ctx context.Context) context.Context {
