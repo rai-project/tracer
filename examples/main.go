@@ -13,8 +13,8 @@ import (
 
 func uServiceCall1(ctx context.Context) context.Context {
 	time.Sleep(time.Millisecond * 125) // slow startup
-	sg, ctx := tracer.StartSegmentFromContext(ctx, "service call 1")
-	defer sg.Finish()
+	span, ctx := tracer.StartSpanFromContext(ctx, "service call 1")
+	defer span.Finish()
 
 	time.Sleep(time.Millisecond * 333) // some local work
 
@@ -25,8 +25,8 @@ func uServiceCall1(ctx context.Context) context.Context {
 
 func uServiceCall2(ctx context.Context) context.Context {
 	time.Sleep(time.Millisecond * 125) // slow startup
-	sg, ctx := tracer.StartSegmentFromContext(ctx, "service call 2")
-	defer sg.Finish()
+	span, ctx := tracer.StartSpanFromContext(ctx, "service call 2")
+	defer span.Finish()
 
 	time.Sleep(time.Millisecond * 333) // some local work
 
@@ -40,22 +40,16 @@ func main() {
 		config.ColorMode(true),
 	)
 
-	// choose which tracing backend to use
-	tr := zipkin.NewTracer("test-tracer")
-
-	// Use that tracer
-	tracer.SetGlobal(tr)
-
 	// make sure the tracer finishes its tracing when we're done
-	defer tr.Close()
+	defer tracer.Close()
 
 	// Create some demo segments
 	ctx := context.Background()
-	rootSg, ctx := tracer.StartSegmentFromContext(ctx, "root_segment")
+	rootSg, ctx := tracer.StartSpanFromContext(ctx, "root_segment")
 	defer rootSg.Finish()
 	time.Sleep(time.Millisecond * 500)
 
-	childSg, _ := tracer.StartSegmentFromContext(ctx, "child_segment")
+	childSg, _ := tracer.StartSpanFromContext(ctx, "child_segment")
 	time.Sleep(time.Second)
 	childSg.Finish()
 
@@ -71,9 +65,12 @@ func init() {
 		log = logger.New().WithField("pkg", "tracer/examples")
 
 		// choose which tracing backend to use
-		tr := zipkin.NewTracer("test-tracer")
+		tr, err := zipkin.NewTracer("test-tracer")
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		// Use that tracer
-		tracer.SetGlobal(tr)
+		tracer.SetStd(tr)
 	})
 }
