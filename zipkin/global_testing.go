@@ -1,3 +1,0 @@
-// +build develop
-
-package zipkin

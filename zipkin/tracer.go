@@ -1,13 +1,11 @@
 package zipkin
 
 import (
-	"context"
 	"errors"
 	"io"
 	"net/http"
 
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/rai-project/tracer"
 	jaeger "github.com/uber/jaeger-client-go"
 	"github.com/uber/jaeger-client-go/transport/zipkin"
@@ -16,13 +14,13 @@ import (
 var opentracingGlobalTracerIsSet bool
 
 type Tracer struct {
-	tracer   opentracing.Tracer
-	closer   io.Closer
-	endpoint string
-	name     string
+	tracer      opentracing.Tracer
+	closer      io.Closer
+	endpoint    string
+	serviceName string
 }
 
-func NewTracer(serviceName string) *Tracer {
+func NewTracer(serviceName string) (tracer.Tracer, error) {
 	endpoint := Config.Endpoints[0]
 	trans, err := zipkin.NewHTTPTransport(
 		endpoint,
@@ -31,6 +29,7 @@ func NewTracer(serviceName string) *Tracer {
 	)
 	if err != nil {
 		log.WithError(err).Error("Cannot initialize HTTP transport")
+		return nil, err
 	}
 	tr, cl := jaeger.NewTracer(
 		serviceName,
@@ -40,84 +39,40 @@ func NewTracer(serviceName string) *Tracer {
 
 	if _, ok := opentracing.GlobalTracer().(opentracing.NoopTracer); !ok {
 		log.Error("Expecting global tracer to be uninitialized")
+		return nil, errors.New("expecting global tracer to be uninitialized")
 	}
 	opentracing.SetGlobalTracer(tr)
-	return &Tracer{tracer: tr, closer: cl, endpoint: endpoint, name: serviceName}
+	return &Tracer{tracer: tr, closer: cl, endpoint: endpoint, serviceName: serviceName}, nil
 }
 
-func (t *Tracer) SegmentFromContext(ctx context.Context) tracer.Segment {
-	panic("tracer/zipkin/Segment from Context Unimplemented")
-}
-func (t *Tracer) NewChildSegment(parent tracer.Segment) tracer.Segment {
-	panic("NewChildSegment Unimplemented")
+func (t *Tracer) Close() error {
+	return t.closer.Close()
 }
 
-func (t *Tracer) ContextWithSegment(orig context.Context, s tracer.Segment) context.Context {
+func (t *Tracer) StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
+	return t.tracer.StartSpan(operationName, opts...)
+}
 
-	sg, ok := s.(*Segment)
-	if !ok {
-		return orig
+func (t *Tracer) Inject(sm opentracing.SpanContext, format interface{}, carrier interface{}) error {
+	if req, ok := carrier.(*http.Request); ok {
+		return t.tracer.Inject(
+			sm,
+			opentracing.HTTPHeaders,
+			opentracing.HTTPHeadersCarrier(req.Header),
+		)
 	}
-
-	return opentracing.ContextWithSpan(orig, sg.span)
+	return t.tracer.Inject(sm, format, carrier)
 }
 
-func (t *Tracer) StartSegment(operationName string, sc tracer.SegmentContext) (tracer.Segment, error) {
-	wireContext, ok := sc.(*SegmentContext)
-	if !ok {
-		return nil, errors.New("Starting segment from something that is not a zipkin.SegmentContext")
+func (t *Tracer) Extract(format interface{}, carrier interface{}) (opentracing.SpanContext, error) {
+	if req, ok := carrier.(*http.Request); ok {
+		wireContext, err := t.tracer.Extract(
+			opentracing.HTTPHeaders,
+			opentracing.HTTPHeadersCarrier(req.Header),
+		)
+		return wireContext, err
 	}
-	span := t.tracer.StartSpan(operationName, ext.RPCServerOption(wireContext.sc))
-	return &Segment{span: span}, nil
-}
-
-// StartSegmentFromContext starts and returns a Segment with `operationName`,
-// using any Segment in the ctx as its parent. If none can be found,
-// StartSegmentFromContext creates a root (parentless) Segment
-//
-// The second return value is a context.Context object built around the
-// returned Segment.
-//
-// Example usage:
-//
-//    SomeFunction(ctx context.Context, ...) {
-//        sp, ctx := opentracing.StartSpanFromContext(ctx, "SomeFunction")
-//        defer sp.Finish()
-//        ...
-//    }
-func (t *Tracer) StartSegmentFromContext(ctx context.Context, operationName string) (tracer.Segment, context.Context) {
-
-	// use opentracing to extract or create a span from the context
-	sp, ctx := opentracing.StartSpanFromContext(ctx, operationName)
-
-	sg := &Segment{span: sp}
-	return sg, ctx
-}
-
-func (t *Tracer) Close() {
-	t.closer.Close()
-}
-
-func (t *Tracer) Inject(c tracer.SegmentContext, req *http.Request) error {
-
-	sm, ok := c.(*SegmentContext)
-	if !ok {
-		return errors.New("Injecting something that is not a zipkin.SegmentContext")
-	}
-
-	return t.tracer.Inject(
-		sm.sc,
-		opentracing.TextMap,
-		opentracing.HTTPHeadersCarrier(req.Header),
-	)
-}
-
-func (t *Tracer) Extract(req *http.Request) (tracer.SegmentContext, error) {
-	wireContext, err := t.tracer.Extract(
-		opentracing.TextMap,
-		opentracing.HTTPHeadersCarrier(req.Header),
-	)
-	return &SegmentContext{sc: wireContext}, err
+	return t.tracer.Extract(format, carrier)
 }
 
 func (t *Tracer) Endpoint() string {
@@ -125,5 +80,5 @@ func (t *Tracer) Endpoint() string {
 }
 
 func (t *Tracer) Name() string {
-	return t.name
+	return "zipkin::" + t.serviceName
 }

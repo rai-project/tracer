@@ -1,5 +1,3 @@
-// +build !develop
-
 package zipkin
 
 import (

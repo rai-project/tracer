@@ -4,8 +4,12 @@ import (
 	"fmt"
 	"net/http"
 
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/openzipkin/zipkin-go-opentracing/_thrift/gen-go/zipkincore"
 	"github.com/rai-project/tracer"
 )
+
+type tracingSpanContextKey struct{}
 
 // RequestFunc is a middleware function for outgoing HTTP requests.
 type RequestFunc func(req *http.Request) *http.Request
@@ -15,8 +19,9 @@ type RequestFunc func(req *http.Request) *http.Request
 // is a noop.
 func ToHTTPRequest(tr tracer.Tracer) RequestFunc {
 	return func(req *http.Request) *http.Request {
+		ctx := req.Context()
 		// Retrieve the Span from context.
-		if sg := tracer.SegmentFromContext(req.Context()); sg != nil {
+		if sg := opentracing.SpanFromContext(ctx); sg != nil {
 
 			// We are going to use this span in a client request, so mark as such.
 			// sg.SetKind(tracer.RPCClient) // TODO?
@@ -25,8 +30,11 @@ func ToHTTPRequest(tr tracer.Tracer) RequestFunc {
 			// Add some standard OpenTracing tags, useful in an HTTP request.
 			// ext.HTTPMethod.Set(span, req.Method)
 			// sg.SetHTTPMethod(req.Method) // TODO?
-			sg.SetHTTPHost(req.URL.Host)
-			sg.SetHTTPPath(req.URL.Path)
+
+			sg.SetTag(zipkincore.HTTP_HOST, req.Host)
+			sg.SetTag(zipkincore.HTTP_PATH, req.URL.String())
+			sg.SetTag(zipkincore.HTTP_METHOD, req.Method)
+
 			// ext.HTTPUrl.Set(
 			// 	span,
 			// 	fmt.Sprintf("%s://%s%s", req.URL.Scheme, req.URL.Host, req.URL.Path),
@@ -51,7 +59,7 @@ func ToHTTPRequest(tr tracer.Tracer) RequestFunc {
 			// 	sg.Context(),
 			// 	opentracing.TextMap,
 			// 	opentracing.HTTPHeadersCarrier(req.Header),
-			if err := tr.Inject(sg.Context(), req); err != nil {
+			if err := tr.Inject(sg.Context(), opentracing.TextMap, req); err != nil {
 				fmt.Printf("error encountered while trying to inject span: %+v", err)
 			}
 		}
@@ -69,28 +77,29 @@ type HandlerFunc func(next http.Handler) http.Handler
 // headers, the Segment will be a trace root. The Segment is incorporated in the
 // HTTP Context object and can be retrieved with
 // tracer.SegmentFromContext(ctx).
-func FromHTTPRequest(tracer tracer.Tracer, operationName string,
-) HandlerFunc {
+func FromHTTPRequest(tracer tracer.Tracer, operationName string) HandlerFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			// Try to join to a trace propagated in `req`.
 			fmt.Println(tracer.Name(), tracer.Endpoint())
 
-			wireContext, err := tracer.Extract(req)
+			wireContext, err := tracer.Extract(opentracing.HTTPHeaders, req)
 			if err != nil {
 				log.WithError(err).Error("error while trying to extract span: %+v\n", err)
+				return
 			}
 
 			// create segment
-			sg, err := tracer.StartSegment(operationName, wireContext)
-			if err != nil {
+			sg := opentracing.StartSpan(operationName, opentracing.ChildOf(wireContext))
+			if sg == nil {
 				log.WithError(err).Error("Unable to start segment.")
+				return
 			}
 			sg.SetTag("serverSide", "here")
 			defer sg.Finish()
 
 			// store span in context
-			ctx := tracer.ContextWithSegment(req.Context(), sg)
+			ctx := opentracing.ContextWithSpan(req.Context(), sg)
 
 			// update request context to include our new span
 			req = req.WithContext(ctx)

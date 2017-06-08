@@ -1,53 +1,30 @@
 package tracer
 
-import "context"
-import "net/http"
+import (
+	"io"
+
+	opentracing "github.com/opentracing/opentracing-go"
+)
+
+type Tracer interface {
+	opentracing.Tracer
+	io.Closer
+	Name() string
+	Endpoint() string
+}
 
 var stdTracer Tracer
 
-type Tracer interface {
-	SegmentFromContext(ctx context.Context) Segment
-	// NewChildSegment(parent Segment) Segment
-	// ContextWithSegment stores a Segment in a context
-	ContextWithSegment(orig context.Context, s Segment) context.Context
-	StartSegment(operationName string, c SegmentContext) (Segment, error)
-	StartSegmentFromContext(ctx context.Context, operationName string) (Segment, context.Context)
-	Close()
-	// Inject the SegmentContext into the outgoing HTTP Request.
-	Inject(c SegmentContext, r *http.Request) error
-	// Extract a Segment from a request
-	Extract(req *http.Request) (SegmentContext, error)
-	Endpoint() string
-	Name() string
-}
-
-func SetGlobal(t Tracer) {
+func SetStd(t Tracer) {
 	stdTracer = t
 }
 
-func Global() Tracer {
+func Std() Tracer {
 	return stdTracer
 }
 
-func SegmentFromContext(ctx context.Context) Segment {
-	return stdTracer.SegmentFromContext(ctx)
-}
-
-// func NewChildSegment(parent Segment) Segment {
-// 	return stdTracer.NewChildSegment(parent)
-// }
-
-// ContextWithSegment stores a segment in a context
-func ContextWithSegment(orig context.Context, s Segment) context.Context {
-	return stdTracer.ContextWithSegment(orig, s)
-}
-
-func StartSegment(operationName string, c SegmentContext) (Segment, error) {
-	return stdTracer.StartSegment(operationName, c)
-}
-
-func StartSegmentFromContext(ctx context.Context, operationName string) (Segment, context.Context) {
-	return stdTracer.StartSegmentFromContext(ctx, operationName)
+func StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
+	return stdTracer.StartSpan(operationName, opts...)
 }
 
 func Close() {
