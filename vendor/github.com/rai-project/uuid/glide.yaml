@@ -1,0 +1,8 @@
+package: github.com/rai-project/uuid
+import:
+- package: github.com/davecgh/go-spew
+  version: ~1.1.0
+  subpackages:
+  - spew
+- package: github.com/satori/go.uuid
+  version: ~1.1.0
