@@ -7,7 +7,7 @@ import (
 )
 
 type zipkinConfig struct {
-	Endpoints []string      `json:"endpoints" config:"zipkin.endpoints" default:"http://ec2-34-225-193-157.compute-1.amazonaws.com:9411/api/v1/spans"`
+	Endpoints []string      `json:"endpoints" config:"tracer.endpoints" default:"http://localhost:9411/api/v1/spans"`
 	done      chan struct{} `json:"-" config:"-"`
 }
 
