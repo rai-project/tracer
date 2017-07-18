@@ -3,7 +3,7 @@ package middleware
 import (
 	"github.com/labstack/echo"
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/openzipkin/zipkin-go-opentracing/_thrift/gen-go/zipkincore"
+	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 	"github.com/rai-project/tracer"
 )
 
