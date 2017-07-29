@@ -1,4 +1,4 @@
-package zipkin
+package opentracing
 
 import (
 	"github.com/k0kubun/pp"
@@ -6,39 +6,39 @@ import (
 	"github.com/rai-project/vipertags"
 )
 
-type zipkinConfig struct {
+type opentracingConfig struct {
 	Endpoints []string      `json:"endpoints" config:"tracer.endpoints"`
 	done      chan struct{} `json:"-" config:"-"`
 }
 
 var (
-	Config = &zipkinConfig{
+	Config = &opentracingConfig{
 		done: make(chan struct{}),
 	}
 )
 
-func (zipkinConfig) ConfigName() string {
-	return "Zipkin"
+func (opentracingConfig) ConfigName() string {
+	return "OpenTracing"
 }
 
-func (a *zipkinConfig) SetDefaults() {
+func (a *opentracingConfig) SetDefaults() {
 	vipertags.SetDefaults(a)
 }
 
-func (a *zipkinConfig) Read() {
+func (a *opentracingConfig) Read() {
 	defer close(a.done)
 	vipertags.Fill(a)
 }
 
-func (c zipkinConfig) Wait() {
+func (c opentracingConfig) Wait() {
 	<-c.done
 }
 
-func (c zipkinConfig) String() string {
+func (c opentracingConfig) String() string {
 	return pp.Sprintln(c)
 }
 
-func (c zipkinConfig) Debug() {
+func (c opentracingConfig) Debug() {
 	log.Debug("Zipkin Config = ", c)
 }
 

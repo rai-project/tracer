@@ -1,25 +1,31 @@
 package: github.com/rai-project/tracer
 import:
-- package: github.com/sirupsen/logrus
-  version: ^1.0.0
 - package: github.com/aws/aws-sdk-go
-  version: ^1.8.36
+  version: ~1.10.18
   subpackages:
   - aws
   - service/xray
 - package: github.com/k0kubun/pp
-  version: ^2.3.0
+  version: ~2.3.0
+- package: github.com/labstack/echo
+  version: ~3.2.1
 - package: github.com/opentracing/opentracing-go
-  subpackages:
-  - ext
+  version: ~1.0.2
 - package: github.com/openzipkin/zipkin-go-opentracing
+  version: ~0.3.0
   subpackages:
-  - _thrift/gen-go/zipkincore
+  - thrift/gen-go/zipkincore
 - package: github.com/rai-project/aws
 - package: github.com/rai-project/config
 - package: github.com/rai-project/logger
+- package: github.com/rai-project/utils
 - package: github.com/rai-project/vipertags
+- package: github.com/sirupsen/logrus
+  version: ~1.0.2
 - package: github.com/uber/jaeger-client-go
-  version: ^2.6.0
+  version: ~2.8.0
   subpackages:
   - transport/zipkin
+- package: golang.org/x/sync
+  subpackages:
+  - syncmap

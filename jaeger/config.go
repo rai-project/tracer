@@ -1,4 +1,4 @@
-package zipkin
+package jaeger
 
 import (
 	"github.com/k0kubun/pp"
@@ -6,39 +6,39 @@ import (
 	"github.com/rai-project/vipertags"
 )
 
-type zipkinConfig struct {
+type jaegerConfig struct {
 	Endpoints []string      `json:"endpoints" config:"tracer.endpoints"`
 	done      chan struct{} `json:"-" config:"-"`
 }
 
 var (
-	Config = &zipkinConfig{
+	Config = &jaegerConfig{
 		done: make(chan struct{}),
 	}
 )
 
-func (zipkinConfig) ConfigName() string {
-	return "Zipkin"
+func (jaegerConfig) ConfigName() string {
+	return "Jaeger"
 }
 
-func (a *zipkinConfig) SetDefaults() {
+func (a *jaegerConfig) SetDefaults() {
 	vipertags.SetDefaults(a)
 }
 
-func (a *zipkinConfig) Read() {
+func (a *jaegerConfig) Read() {
 	defer close(a.done)
 	vipertags.Fill(a)
 }
 
-func (c zipkinConfig) Wait() {
+func (c jaegerConfig) Wait() {
 	<-c.done
 }
 
-func (c zipkinConfig) String() string {
+func (c jaegerConfig) String() string {
 	return pp.Sprintln(c)
 }
 
-func (c zipkinConfig) Debug() {
+func (c jaegerConfig) Debug() {
 	log.Debug("Zipkin Config = ", c)
 }
 

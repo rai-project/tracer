@@ -7,7 +7,6 @@ import (
 	"github.com/rai-project/config"
 	"github.com/rai-project/logger"
 	tracer "github.com/rai-project/tracer"
-	zipkin "github.com/rai-project/tracer/zipkin"
 	"github.com/sirupsen/logrus"
 )
 
@@ -65,7 +64,7 @@ func init() {
 		log = logger.New().WithField("pkg", "tracer/examples")
 
 		// choose which tracing backend to use
-		tr, err := zipkin.NewTracer("test-tracer")
+		tr, err := tracer.New("test-tracer")
 		if err != nil {
 			log.Fatal(err)
 		}

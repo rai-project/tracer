@@ -1,5 +1,5 @@
 tracer:
   enabled: true
-zipkin:
+  backend: zipkin
   endpoints:
-    - http://ec2-34-225-193-157.compute-1.amazonaws.com:9411/api/v1/spans
+    - http://localhost:9411/api/v1/spans

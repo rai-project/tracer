@@ -15,12 +15,15 @@ var (
 	log *loggerWrapper
 )
 
-func (l *loggerWrapper) Error(s string) {
-	l.Entry.Error(s)
+func (l *loggerWrapper) Log(keyvals ...interface{}) error {
+	l.Entry.Info(keyvals...)
+	return nil
 }
 
 func init() {
 	config.AfterInit(func() {
-		log = &loggerWrapper{logger.New().WithField("pkg", "tracer/zipkin")}
+		log = &loggerWrapper{
+			logger.New().WithField("pkg", "tracer/zipkin"),
+		}
 	})
 }
