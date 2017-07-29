@@ -39,7 +39,7 @@ func (c jaegerConfig) String() string {
 }
 
 func (c jaegerConfig) Debug() {
-	log.Debug("Zipkin Config = ", c)
+	log.Debug("Jaeger Config = ", c)
 }
 
 func init() {

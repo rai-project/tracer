@@ -23,8 +23,7 @@ func neverSample(_ uint64) bool { return false }
 func alwaysSample(_ uint64) bool { return true }
 
 func New(serviceName string) (*Tracer, error) {
-	tracer := &Tracer{
-	}
+	tracer := &Tracer{}
 	err := tracer.Init(serviceName)
 	if err != nil {
 		return nil, nil
@@ -33,6 +32,7 @@ func New(serviceName string) (*Tracer, error) {
 }
 
 func (t *Tracer) Init(serviceName string) error {
+	Config.Wait()
 	inDebugModeQ := config.App.IsDebug
 	endpoints := Config.Endpoints
 	if len(endpoints) == 0 {
@@ -62,7 +62,7 @@ func (t *Tracer) Init(serviceName string) error {
 	t.Tracer = tr
 	t.closer = collector
 	t.endpoints = endpoints
-	t.serviceName := serviceName
+	t.serviceName = serviceName
 
 	return nil
 }

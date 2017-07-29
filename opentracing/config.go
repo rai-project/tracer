@@ -39,7 +39,7 @@ func (c opentracingConfig) String() string {
 }
 
 func (c opentracingConfig) Debug() {
-	log.Debug("Zipkin Config = ", c)
+	log.Debug("OpenTracing Config = ", c)
 }
 
 func init() {

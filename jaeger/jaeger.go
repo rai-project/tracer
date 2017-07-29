@@ -31,6 +31,7 @@ func New(serviceName string) (*Tracer, error) {
 }
 
 func (t *Tracer) Init(serviceName string) error {
+	Config.Wait()
 	endpoints := Config.Endpoints
 	if len(endpoints) == 0 {
 		return errors.New("no endpoints defined for jaeger tracer")
@@ -54,7 +55,7 @@ func (t *Tracer) Init(serviceName string) error {
 	t.closer = cl
 	t.endpoints = endpoints
 	t.Tracer = tr
-	t.serviceName := serviceName
+	t.serviceName = serviceName
 
 	return nil
 }

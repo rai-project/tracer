@@ -6,8 +6,21 @@ import (
 
 	"github.com/rai-project/config"
 	"github.com/rai-project/logger"
-	tracer "github.com/rai-project/tracer"
+	"github.com/rai-project/tracer"
+	_ "github.com/rai-project/tracer/jaeger"
+	_ "github.com/rai-project/tracer/noop"
+	_ "github.com/rai-project/tracer/zipkin"
 	"github.com/sirupsen/logrus"
+)
+
+var (
+	log  *logrus.Entry
+	conf = `tracer:
+  enabled: true
+  backend: zipkin
+  endpoints:
+    - http://localhost:9411/api/v1/spans
+`
 )
 
 func uServiceCall1(ctx context.Context) context.Context {
@@ -33,11 +46,17 @@ func uServiceCall2(ctx context.Context) context.Context {
 }
 
 func main() {
-	config.Init(
-		config.VerboseMode(true),
-		config.DebugMode(true),
-		config.ColorMode(true),
-	)
+
+	log = logger.New().WithField("pkg", "tracer/examples")
+
+	// choose which tracing backend to use
+	tr, err := tracer.New("test-tracer")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Use that tracer
+	tracer.SetStd(tr)
 
 	// make sure the tracer finishes its tracing when we're done
 	defer tracer.Close()
@@ -55,21 +74,12 @@ func main() {
 	uServiceCall1(ctx)
 }
 
-var (
-	log *logrus.Entry
-)
-
 func init() {
-	config.AfterInit(func() {
-		log = logger.New().WithField("pkg", "tracer/examples")
-
-		// choose which tracing backend to use
-		tr, err := tracer.New("test-tracer")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		// Use that tracer
-		tracer.SetStd(tr)
-	})
+	config.Init(
+		config.VerboseMode(true),
+		config.DebugMode(true),
+		config.ColorMode(true),
+		config.AppName("rai"),
+		config.ConfigString(conf),
+	)
 }
