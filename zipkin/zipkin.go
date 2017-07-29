@@ -80,5 +80,5 @@ func (t *Tracer) Name() string {
 }
 
 func init() {
-	tracer.AddTracer("zipkin", &Tracer{})
+	tracer.Register("zipkin", &Tracer{})
 }

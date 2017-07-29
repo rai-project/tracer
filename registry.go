@@ -26,7 +26,7 @@ func FromName(s string) (Tracer, error) {
 	return tracer, nil
 }
 
-func AddTracer(name string, s Tracer) {
+func Register(name string, s Tracer) {
 	tracers.Store(strings.ToLower(name), s)
 }
 

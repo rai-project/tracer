@@ -72,5 +72,5 @@ func (t *Tracer) Name() string {
 }
 
 func init() {
-	tracer.AddTracer("jaeger", &Tracer{})
+	tracer.Register("jaeger", &Tracer{})
 }

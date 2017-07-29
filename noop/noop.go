@@ -30,6 +30,6 @@ func (*Tracer) Close() error {
 }
 
 func init() {
-	tracer.AddTracer("disabled", &Tracer{})
-	tracer.AddTracer("noop", &Tracer{})
+	tracer.Register("disabled", &Tracer{})
+	tracer.Register("noop", &Tracer{})
 }
