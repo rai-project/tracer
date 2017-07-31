@@ -31,6 +31,12 @@ func New(serviceName string) (*Tracer, error) {
 }
 
 func (t *Tracer) Init(serviceName string) error {
+	if t.initialized {
+		return nil
+	}
+	defer func() {
+		t.initialized = true
+	}()
 	Config.Wait()
 	endpoints := Config.Endpoints
 	if len(endpoints) == 0 {

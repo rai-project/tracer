@@ -7,6 +7,7 @@ import (
 )
 
 type Tracer struct {
+	initialized bool
 	opentracing.Tracer
 	closer      io.Closer
 	endpoints   []string

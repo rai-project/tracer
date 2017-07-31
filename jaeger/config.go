@@ -3,6 +3,7 @@ package jaeger
 import (
 	"github.com/k0kubun/pp"
 	"github.com/rai-project/config"
+	"github.com/rai-project/tracer/utils"
 	"github.com/rai-project/vipertags"
 )
 
@@ -12,7 +13,8 @@ type jaegerConfig struct {
 }
 
 var (
-	Config = &jaegerConfig{
+	fixEndpoints = utils.FixEndpoints("http://", "9411", "/api/v1/spans")
+	Config       = &jaegerConfig{
 		done: make(chan struct{}),
 	}
 )
@@ -28,6 +30,7 @@ func (a *jaegerConfig) SetDefaults() {
 func (a *jaegerConfig) Read() {
 	defer close(a.done)
 	vipertags.Fill(a)
+	a.Endpoints = fixEndpoints(a.Endpoints)
 }
 
 func (c jaegerConfig) Wait() {

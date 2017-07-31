@@ -12,6 +12,7 @@ import (
 )
 
 type Tracer struct {
+	initialized bool
 	opentracing.Tracer
 	closer      io.Closer
 	endpoints   []string
@@ -32,6 +33,12 @@ func New(serviceName string) (*Tracer, error) {
 }
 
 func (t *Tracer) Init(serviceName string) error {
+	if t.initialized {
+		return nil
+	}
+	defer func() {
+		t.initialized = true
+	}()
 	Config.Wait()
 	inDebugModeQ := config.App.IsDebug
 	endpoints := Config.Endpoints

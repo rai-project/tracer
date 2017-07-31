@@ -3,6 +3,7 @@ package zipkin
 import (
 	"github.com/k0kubun/pp"
 	"github.com/rai-project/config"
+	"github.com/rai-project/tracer/utils"
 	"github.com/rai-project/vipertags"
 )
 
@@ -12,7 +13,8 @@ type zipkinConfig struct {
 }
 
 var (
-	Config = &zipkinConfig{
+	fixEndpoints = utils.FixEndpoints("http://", "9411", "/api/v1/spans")
+	Config       = &zipkinConfig{
 		done: make(chan struct{}),
 	}
 )
@@ -28,6 +30,7 @@ func (a *zipkinConfig) SetDefaults() {
 func (a *zipkinConfig) Read() {
 	defer close(a.done)
 	vipertags.Fill(a)
+	a.Endpoints = fixEndpoints(a.Endpoints)
 }
 
 func (c zipkinConfig) Wait() {
