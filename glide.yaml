@@ -12,7 +12,7 @@ import:
 - package: github.com/opentracing/opentracing-go
   version: master
 - package: github.com/openzipkin/zipkin-go-opentracing
-  version: 0dd1b4f9531b909d42de18b9af9b555a55c623f5
+  version: e6b1ad87c0787de9cb033d4f680fe69cd69e19fe
   subpackages:
   - thrift/gen-go/zipkincore
 - package: github.com/rai-project/aws
