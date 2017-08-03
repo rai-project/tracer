@@ -87,8 +87,7 @@ func Close() {
 
 func init() {
 	config.AfterInit(func() {
-		Config.Wait()
-		std, err := New("standard")
+		std, err := New(config.App.Name)
 		if err != nil {
 			return
 		}
