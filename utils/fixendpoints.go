@@ -16,7 +16,7 @@ func fixEndpoint(scheme, port, path, endpoint string) (string, error) {
 	if u.Scheme == "" {
 		u.Scheme = scheme
 	}
-	if u.Port() == "" {
+	if urlPort(u) == "" {
 		u.Host = u.Host + ":" + port
 	}
 	if u.Path == "" {
