@@ -53,7 +53,10 @@ func FromHTTPRequest(tracer tracer.Tracer, operationName string) echo.Middleware
 				log.WithError(err).Error("Unable to start segment.")
 				return next(c)
 			}
-			sg.SetTag("serverSide", "here")
+			if requestID := c.Response().Header().Get(echo.HeaderXRequestID); requestID != "" {
+				sg.SetTag("request_id", requestID)
+			}
+			sg.SetTag("url", req.URL)
 			defer sg.Finish()
 
 			// store span in context
@@ -61,6 +64,7 @@ func FromHTTPRequest(tracer tracer.Tracer, operationName string) echo.Middleware
 
 			// update request context to include our new span
 			req = req.WithContext(ctx)
+			c.SetRequest(req)
 
 			// next middleware or actual request handler
 			return next(c)
