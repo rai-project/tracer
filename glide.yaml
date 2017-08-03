@@ -23,7 +23,7 @@ import:
 - package: github.com/sirupsen/logrus
   version: ~1.0.2
 - package: github.com/uber/jaeger-client-go
-  version: ~2.8.0
+  version: master
   subpackages:
   - transport/zipkin
 - package: golang.org/x/sync
