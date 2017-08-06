@@ -1,4 +1,3 @@
-// +build !develop
 
 package middleware
 
