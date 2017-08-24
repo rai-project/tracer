@@ -8,7 +8,7 @@ import (
 )
 
 type jaegerConfig struct {
-	Endpoints []string      `json:"endpoints" config:"tracer.endpoints"`
+	Endpoints []string      `json:"endpoints" config:"tracer.endpoints" env:"TRACER_ENDPOINTS"`
 	done      chan struct{} `json:"-" config:"-"`
 }
 
