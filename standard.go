@@ -23,6 +23,10 @@ func New(serviceName string) (Tracer, error) {
 	if !Config.Enabled {
 		backendName = "noop"
 	}
+	return NewFromName(serviceName, backendName)
+}
+
+func NewFromName(serviceName, backendName string) (Tracer, error) {
 	tracer, err := FromName(backendName)
 	if err != nil {
 		log.WithError(err).
@@ -89,6 +93,12 @@ func init() {
 	config.AfterInit(func() {
 		std, err := New(config.App.Name)
 		if err != nil {
+			// just use the noop tracer
+			std, err := NewFromName(config.App.Name, "noop")
+			if err != nil {
+				return
+			}
+			SetStd(std)
 			return
 		}
 		SetStd(std)
