@@ -56,6 +56,7 @@ func FromHTTPRequest(tracer tracer.Tracer, operationName string) echo.Middleware
 			if requestID := c.Response().Header().Get(echo.HeaderXRequestID); requestID != "" {
 				sg.SetTag("request_id", requestID)
 			}
+			sg.SetTag("http_method", req.Method)
 			sg.SetTag("url", req.URL)
 			defer sg.Finish()
 
