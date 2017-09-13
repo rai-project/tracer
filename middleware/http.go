@@ -43,8 +43,9 @@ func FromHTTPRequest(tracer tracer.Tracer, operationName string) echo.Middleware
 
 			carrier := opentracing.HTTPHeadersCarrier(req.Header)
 			wireContext, err := tracer.Extract(opentracing.HTTPHeaders, carrier)
+
 			if err == nil && wireContext != nil {
-				startSpanOpts = append(startSpanOpts, opentracing.ChildOf(wireContext))
+				startSpanOpts = append(startSpanOpts, opentracing.FollowsFrom(wireContext))
 			}
 
 			// create segment
@@ -58,6 +59,12 @@ func FromHTTPRequest(tracer tracer.Tracer, operationName string) echo.Middleware
 			}
 			sg.SetTag("http_method", req.Method)
 			sg.SetTag("url", req.URL)
+
+			tracer.Inject(
+				sg.Context(),
+				opentracing.HTTPHeaders,
+				opentracing.HTTPHeadersCarrier(c.Response().Header()))
+
 			defer sg.Finish()
 
 			// store span in context
