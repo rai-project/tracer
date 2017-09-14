@@ -28,6 +28,24 @@ func ToHTTPRequest(tr tracer.Tracer) echo.MiddlewareFunc {
 	}
 }
 
+func ToHTTPResponse(tracer tracer.Tracer) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			req := c.Request()
+			ctx := req.Context()
+			sg := opentracing.SpanFromContext(ctx)
+			if sg == nil {
+				return next(c)
+			}
+			tracer.Inject(
+				sg.Context(),
+				opentracing.HTTPHeaders,
+				opentracing.HTTPHeadersCarrier(c.Response().Header()))
+			return next(c)
+		}
+	}
+}
+
 func FromHTTPRequest(tracer tracer.Tracer, operationName string) echo.MiddlewareFunc {
 	// Try to join to a trace propagated in `req`.
 	log.WithField("tracer_name", tracer.Name()).
@@ -59,11 +77,6 @@ func FromHTTPRequest(tracer tracer.Tracer, operationName string) echo.Middleware
 			}
 			sg.SetTag("http_method", req.Method)
 			sg.SetTag("url", req.URL)
-
-			tracer.Inject(
-				sg.Context(),
-				opentracing.HTTPHeaders,
-				opentracing.HTTPHeadersCarrier(c.Response().Header()))
 
 			defer sg.Finish()
 
