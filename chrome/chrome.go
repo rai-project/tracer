@@ -1,8 +1,8 @@
 package chrome
 
 import (
+	"fmt"
 	"sort"
-	"strconv"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -13,18 +13,18 @@ import (
 // Trace is an entry of trace format.
 // https://github.com/catapult-project/catapult/tree/master/tracing
 type TraceEvent struct {
-	Name      string                 `json:"name"`
-	Category  string                 `json:"cat"`
-	EventType string                 `json:"ph"`
-	Timestamp int                    `json:"ts"`  // displayTimeUnit
-	Duration  int                    `json:"dur"` // displayTimeUnit
-	ProcessID int                    `json:"pid"`
-	ThreadID  int                    `json:"tid"`
-	Args      map[string]interface{} `json:"args"`
+	Name      string                 `json:"name,omitempty"`
+	Category  string                 `json:"cat,omitempty"`
+	EventType string                 `json:"ph,omitempty"`
+	Timestamp int64                  `json:"ts,omitempty"`  // displayTimeUnit
+	Duration  time.Duration          `json:"dur,omitempty"` // displayTimeUnit
+	ProcessID int64                  `json:"pid,omitempty"`
+	ThreadID  int64                  `json:"tid,omitempty"`
+	Args      map[string]interface{} `json:"args,omitempty"`
 }
 
 func (t TraceEvent) ID() string {
-	return t.Name + "/" + strconv.Itoa(t.ThreadID)
+	return fmt.Sprintf("%s::%s/%v", t.Category, t.Name, t.ThreadID)
 }
 
 type TraceEvents []TraceEvent
@@ -34,13 +34,11 @@ func (t TraceEvents) Swap(i, j int)      { t[i], t[j] = t[j], t[i] }
 func (t TraceEvents) Less(i, j int) bool { return t[i].Timestamp < t[j].Timestamp }
 
 type Trace struct {
-	StartTime       time.Time   `json:"-"`
-	EndTime         time.Time   `json:"-"`
-	TraceEvents     TraceEvents `json:"traceEvents"`
-	DisplayTimeUnit string      `json:"displayTimeUnit"`
-	OtherData       struct {
-		Version string `json:"version"`
-	} `json:"otherData"`
+	StartTime       time.Time              `json:"-"`
+	EndTime         time.Time              `json:"-"`
+	TraceEvents     TraceEvents            `json:"traceEvents,omitempty"`
+	DisplayTimeUnit string                 `json:"displayTimeUnit,omitempty"`
+	OtherData       map[string]interface{} `json:"otherData,omitempty"`
 }
 
 func (t Trace) Len() int           { return t.TraceEvents.Len() }
@@ -49,6 +47,7 @@ func (t Trace) Less(i, j int) bool { return t.TraceEvents.Less(i, j) }
 
 type publishInfo struct {
 	startEvent TraceEvent
+	startTime  time.Time
 	span       opentracing.Span
 }
 
@@ -59,26 +58,49 @@ func (t Trace) Publish(ctx context.Context, operationName string, opts ...opentr
 	case "ns":
 		timeUnit = time.Nanosecond
 	case "us":
-		timeUnit = time.Microsecond
-	case "ms":
 		timeUnit = time.Millisecond
+	case "ms":
+		timeUnit = time.Microsecond
 	case "":
 		timeUnit = time.Microsecond
 	default:
 		return nil, nil, errors.Errorf("the display time unit %v is not valid", t.DisplayTimeUnit)
 	}
 
-	span, newCtx := opentracing.StartSpanFromContext(ctx, operationName, opts...)
+	start := t.StartTime
+
+	topOpts := append(
+		[]opentracing.StartSpanOption{
+			opentracing.StartTime(start),
+			opentracing.Tags{
+				"time_unit": t.DisplayTimeUnit,
+			},
+		},
+		opts...,
+	)
+	span, newCtx := opentracing.StartSpanFromContext(ctx, operationName, topOpts...)
 	if span == nil {
 		return nil, ctx, errors.New("span not found in context")
 	}
-	defer span.Finish()
-
-	start := t.StartTime
+	defer span.FinishWithOptions(opentracing.FinishOptions{
+		FinishTime: t.EndTime,
+	})
 
 	spans := map[string]*publishInfo{}
 
 	sort.Sort(t)
+
+	minTime := int64(0)
+	for _, event := range t.TraceEvents {
+		if event.EventType != "B" {
+			continue
+		}
+		if minTime != 0 && minTime < event.Timestamp {
+			continue
+		}
+		minTime = event.Timestamp
+	}
+	span.SetTag("min_time", timeUnit*time.Duration(minTime))
 
 	for _, event := range t.TraceEvents {
 		if event.EventType != "B" && event.EventType != "E" {
@@ -86,18 +108,31 @@ func (t Trace) Publish(ctx context.Context, operationName string, opts ...opentr
 		}
 		id := event.ID()
 		if event.EventType == "B" {
-			s := opentracing.StartSpan(
+			t := time.Duration(event.Timestamp-minTime) * timeUnit
+			startTime := start.Add(t)
+			tags := opentracing.Tags{
+				"category":        event.Category,
+				"process_id":      event.ProcessID,
+				"thread_id":       event.ThreadID,
+				"start_timestamp": timeUnit * time.Duration(event.Timestamp),
+				"start_time":      startTime,
+			}
+			for k, v := range event.Args {
+				tags[k] = v
+			}
+			s, _ := opentracing.StartSpanFromContext(
+				ctx,
 				event.Name,
 				opentracing.ChildOf(span.Context()),
-				opentracing.StartTime(start.Add(time.Duration(event.Timestamp)*timeUnit)),
-				opentracing.Tags{
-					"category":   event.Category,
-					"process_id": event.ProcessID,
-					"thread_id":  event.ThreadID,
-				},
+				opentracing.StartTime(startTime),
+				tags,
 			)
+			if s == nil {
+				continue
+			}
 			spans[id] = &publishInfo{
 				startEvent: event,
+				startTime:  startTime,
 				span:       s,
 			}
 			continue
@@ -106,13 +141,18 @@ func (t Trace) Publish(ctx context.Context, operationName string, opts ...opentr
 		if !ok {
 			continue
 		}
-		if event.Duration != 0 {
-			event.Duration = event.Timestamp - startEntry.startEvent.Timestamp
+		s := startEntry.span
+		if event.Duration == 0 {
+			event.Duration = time.Duration(event.Timestamp-startEntry.startEvent.Timestamp) * timeUnit
 		}
-		finishTime := start.Add(time.Duration(startEntry.startEvent.Timestamp+event.Duration) * timeUnit)
-		startEntry.span.FinishWithOptions(opentracing.FinishOptions{
-			FinishTime: finishTime,
-		})
+		endTime := startEntry.startTime.Add(event.Duration)
+		duration := endTime.Sub(startEntry.startTime).Nanoseconds()
+		s.SetTag("end_timestamp", timeUnit*time.Duration(event.Timestamp)).
+			SetTag("endtime", endTime).
+			SetTag("duration(ns)", duration).
+			FinishWithOptions(opentracing.FinishOptions{
+				FinishTime: endTime,
+			})
 		delete(spans, id)
 	}
 
