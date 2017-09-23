@@ -46,7 +46,7 @@ func (t *Tracer) Init(serviceName string) error {
 	}
 	trans, err := zipkin.NewHTTPTransport(
 		endpoints[0],
-		zipkin.HTTPBatchSize(1),
+		zipkin.HTTPBatchSize(100),
 		zipkin.HTTPLogger(log),
 	)
 	if err != nil {
