@@ -9,6 +9,8 @@ import (
 	"github.com/rai-project/tracer"
 	jaeger "github.com/uber/jaeger-client-go"
 	"github.com/uber/jaeger-client-go/transport/zipkin"
+
+	zpk "github.com/uber/jaeger-client-go/zipkin"
 )
 
 var opentracingGlobalTracerIsSet bool
@@ -51,11 +53,23 @@ func (t *Tracer) Init(serviceName string) error {
 		log.WithError(err).Error("Cannot initialize HTTP transport")
 		return err
 	}
+
+	// Adds support for injecting and extracting Zipkin B3 Propagation HTTP headers, for use with other Zipkin collectors.
+	zipkinPropagator := zpk.NewZipkinB3HTTPHeaderPropagator()
+	injector := jaeger.TracerOptions.Injector(opentracing.HTTPHeaders, zipkinPropagator)
+	extractor := jaeger.TracerOptions.Extractor(opentracing.HTTPHeaders, zipkinPropagator)
+
+	// Zipkin shares span ID between client and server spans; it must be enabled via the following option.
+	zipkinSharedRPCSpan := jaeger.TracerOptions.ZipkinSharedRPCSpan(true)
+
 	tr, cl := jaeger.NewTracer(
 		serviceName,
 		jaeger.NewConstSampler(true /*sample all*/),
 		jaeger.NewRemoteReporter(trans),
 		jaeger.TracerOptions.Tag("app", config.App.Name),
+		injector,
+		extractor,
+		zipkinSharedRPCSpan,
 	)
 
 	t.closer = cl
