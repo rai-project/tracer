@@ -7,8 +7,10 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/rai-project/config"
 	"github.com/rai-project/tracer"
-	jaeger "github.com/uber/jaeger-client-go"
 	"github.com/uber/jaeger-client-go/transport/zipkin"
+	"github.com/uber/jaeger-lib/metrics"
+
+	jaeger "github.com/uber/jaeger-client-go"
 
 	zpk "github.com/uber/jaeger-client-go/zipkin"
 )
@@ -54,22 +56,25 @@ func (t *Tracer) Init(serviceName string) error {
 		return err
 	}
 
+	metricsFactory := metrics.NewLocalFactory(0)
+
 	// Adds support for injecting and extracting Zipkin B3 Propagation HTTP headers, for use with other Zipkin collectors.
 	zipkinPropagator := zpk.NewZipkinB3HTTPHeaderPropagator()
-	injector := jaeger.TracerOptions.Injector(opentracing.HTTPHeaders, zipkinPropagator)
-	extractor := jaeger.TracerOptions.Extractor(opentracing.HTTPHeaders, zipkinPropagator)
-
-	// Zipkin shares span ID between client and server spans; it must be enabled via the following option.
-	zipkinSharedRPCSpan := jaeger.TracerOptions.ZipkinSharedRPCSpan(true)
 
 	tr, cl := jaeger.NewTracer(
 		serviceName,
 		jaeger.NewConstSampler(true /*sample all*/),
 		jaeger.NewRemoteReporter(trans),
 		jaeger.TracerOptions.Tag("app", config.App.Name),
-		injector,
-		extractor,
-		zipkinSharedRPCSpan,
+		jaeger.TracerOptions.Injector(opentracing.HTTPHeaders, zipkinPropagator),
+		jaeger.TracerOptions.Extractor(opentracing.HTTPHeaders, zipkinPropagator),
+		jaeger.TracerOptions.Metrics(jaeger.NewMetrics(metricsFactory, map[string]string{"lib": "jaeger"})),
+		jaeger.TracerOptions.Logger(log),
+		jaeger.TracerOptions.Observer(perfeventsObserver),
+		// jaeger.TracerOptions.ContribObserver(contribObserver),
+		jaeger.TracerOptions.Gen128Bit(true),
+		// Zipkin shares span ID between client and server spans; it must be enabled via the following option.
+		jaeger.TracerOptions.ZipkinSharedRPCSpan(true),
 	)
 
 	t.closer = cl
