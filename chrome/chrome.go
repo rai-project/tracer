@@ -34,6 +34,7 @@ func (t TraceEvents) Swap(i, j int)      { t[i], t[j] = t[j], t[i] }
 func (t TraceEvents) Less(i, j int) bool { return t[i].Timestamp < t[j].Timestamp }
 
 type Trace struct {
+	InitTime        time.Time              `json:"-"`
 	StartTime       time.Time              `json:"-"`
 	EndTime         time.Time              `json:"-"`
 	TraceEvents     TraceEvents            `json:"traceEvents,omitempty"`
@@ -58,9 +59,9 @@ func (t Trace) Publish(ctx context.Context, operationName string, opts ...opentr
 	case "ns":
 		timeUnit = time.Nanosecond
 	case "us":
-		timeUnit = time.Millisecond
-	case "ms":
 		timeUnit = time.Microsecond
+	case "ms":
+		timeUnit = time.Millisecond
 	case "":
 		timeUnit = time.Microsecond
 	default:
@@ -91,7 +92,16 @@ func (t Trace) Publish(ctx context.Context, operationName string, opts ...opentr
 	sort.Sort(t)
 
 	minTime := int64(0)
+	events := []TraceEvent{}
 	for _, event := range t.TraceEvents {
+		if event.EventType != "B" && event.EventType != "E" {
+			continue
+		}
+		t := t.InitTime.Add(time.Duration(event.Timestamp) * timeUnit)
+		if start.After(t) {
+			continue
+		}
+		events = append(events, event)
 		if event.EventType != "B" {
 			continue
 		}
@@ -100,22 +110,18 @@ func (t Trace) Publish(ctx context.Context, operationName string, opts ...opentr
 		}
 		minTime = event.Timestamp
 	}
-	span.SetTag("min_time", timeUnit*time.Duration(minTime))
 
-	for _, event := range t.TraceEvents {
-		if event.EventType != "B" && event.EventType != "E" {
-			continue
-		}
+	for _, event := range events {
 		id := event.ID()
 		if event.EventType == "B" {
 			t := time.Duration(event.Timestamp-minTime) * timeUnit
 			startTime := start.Add(t)
 			tags := opentracing.Tags{
-				"category":        event.Category,
-				"process_id":      event.ProcessID,
-				"thread_id":       event.ThreadID,
-				"start_timestamp": timeUnit * time.Duration(event.Timestamp),
-				"start_time":      startTime,
+				"category":   event.Category,
+				"process_id": event.ProcessID,
+				"thread_id":  event.ThreadID,
+				// "start_timestamp": timeUnit * time.Duration(event.Timestamp),
+				// "start_time":      startTime,
 			}
 			for k, v := range event.Args {
 				tags[k] = v
@@ -146,10 +152,11 @@ func (t Trace) Publish(ctx context.Context, operationName string, opts ...opentr
 			event.Duration = time.Duration(event.Timestamp-startEntry.startEvent.Timestamp) * timeUnit
 		}
 		endTime := startEntry.startTime.Add(event.Duration)
-		duration := endTime.Sub(startEntry.startTime).Nanoseconds()
-		s.SetTag("end_timestamp", timeUnit*time.Duration(event.Timestamp)).
-			SetTag("endtime", endTime).
-			SetTag("duration(ns)", duration).
+		// duration := endTime.Sub(startEntry.startTime).Nanoseconds()
+		s.
+			// SetTag("end_timestamp", timeUnit*time.Duration(event.Timestamp)).
+			// SetTag("endtime", endTime).
+			// SetTag("duration(ns)", duration).
 			FinishWithOptions(opentracing.FinishOptions{
 				FinishTime: endTime,
 			})
