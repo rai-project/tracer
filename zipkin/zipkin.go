@@ -6,7 +6,6 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	zipkin "github.com/openzipkin/zipkin-go-opentracing"
-	"github.com/rai-project/config"
 	"github.com/rai-project/tracer"
 	"github.com/rai-project/utils"
 )
@@ -40,7 +39,8 @@ func (t *Tracer) Init(serviceName string) error {
 		t.initialized = true
 	}()
 	Config.Wait()
-	inDebugModeQ := config.App.IsDebug
+
+	inDebugModeQ := false
 	endpoints := Config.Endpoints
 	if len(endpoints) == 0 {
 		return errors.New("no endpoints defined for zipkin tracer")
@@ -61,7 +61,7 @@ func (t *Tracer) Init(serviceName string) error {
 	tr, err := zipkin.NewTracer(
 		recorder,
 		zipkin.WithSampler(alwaysSample),
-		zipkin.WithLogger(log),
+		// zipkin.WithLogger(log),
 		zipkin.TraceID128Bit(true),
 		zipkin.DebugMode(inDebugModeQ),
 	)
