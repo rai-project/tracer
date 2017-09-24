@@ -27,7 +27,7 @@ func (t TraceEvent) ID() string {
 	return fmt.Sprintf("%s::%s/%v", t.Category, t.Name, t.ThreadID)
 }
 
-type TraceEvents []*TraceEvent
+type TraceEvents []TraceEvent
 
 func (t TraceEvents) Len() int           { return len(t) }
 func (t TraceEvents) Swap(i, j int)      { t[i], t[j] = t[j], t[i] }
@@ -47,7 +47,7 @@ func (t Trace) Swap(i, j int)      { t.TraceEvents.Swap(i, j) }
 func (t Trace) Less(i, j int) bool { return t.TraceEvents.Less(i, j) }
 
 type publishInfo struct {
-	startEvent *TraceEvent
+	startEvent TraceEvent
 	startTime  time.Time
 	span       opentracing.Span
 }
