@@ -19,28 +19,11 @@ func Std() Tracer {
 }
 
 func New(serviceName string) (Tracer, error) {
-	backendName := Config.Backend
-	if !Config.Enabled {
+	backendName := Config.Provider
+	if backendName == "" || !Config.Enabled {
 		backendName = "noop"
 	}
 	return NewFromName(serviceName, backendName)
-}
-
-func NewFromName(serviceName, backendName string) (Tracer, error) {
-	tracer, err := FromName(backendName)
-	if err != nil {
-		log.WithError(err).
-			WithField("name", backendName).
-			Error("unable to find tracer with specified name")
-		return nil, err
-	}
-	if err := tracer.Init(serviceName); err != nil {
-		log.WithError(err).
-			WithField("name", backendName).
-			Error("failed to initialize tracer")
-		return nil, err
-	}
-	return tracer, nil
 }
 
 func StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
@@ -75,9 +58,9 @@ func Endpoints() []string {
 	return stdTracer.Endpoints()
 }
 
-func Backend() string {
+func Provider() string {
 	if stdTracer == nil {
-		return Config.Backend
+		return Config.Provider
 	}
 	return stdTracer.Name()
 }

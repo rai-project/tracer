@@ -9,6 +9,11 @@ import (
 
 var tracers syncmap.Map
 
+type tracerRegistryItem struct {
+	tracer Tracer
+	new    func(serviceName string) (Tracer, error)
+}
+
 func FromName(s string) (Tracer, error) {
 	s = strings.ToLower(s)
 	val, ok := tracers.Load(s)
@@ -17,17 +22,34 @@ func FromName(s string) (Tracer, error) {
 			Warn("cannot find tracer")
 		return nil, errors.New("cannot find tracer")
 	}
-	tracer, ok := val.(Tracer)
+	tracer, ok := val.(tracerRegistryItem)
 	if !ok {
 		log.WithField("tracer", s).
 			Warn("invalid tracer")
 		return nil, errors.New("invalid tracer")
 	}
-	return tracer, nil
+	return tracer.tracer, nil
 }
 
-func Register(name string, s Tracer) {
-	tracers.Store(strings.ToLower(name), s)
+func NewFromName(serviceName, backendName string) (Tracer, error) {
+	s := strings.ToLower(backendName)
+	val, ok := tracers.Load(s)
+	if !ok {
+		log.WithField("tracer", s).
+			Warn("cannot find tracer")
+		return nil, errors.New("cannot find tracer")
+	}
+	tracer, ok := val.(tracerRegistryItem)
+	if !ok {
+		log.WithField("tracer", s).
+			Warn("invalid tracer")
+		return nil, errors.New("invalid tracer")
+	}
+	return tracer.new(serviceName)
+}
+
+func Register(name string, s Tracer, newFunc func(serviceName string) (Tracer, error)) {
+	tracers.Store(strings.ToLower(name), tracerRegistryItem{tracer: s, new: newFunc})
 }
 
 func Tracers() []string {

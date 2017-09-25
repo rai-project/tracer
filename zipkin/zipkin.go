@@ -8,6 +8,7 @@ import (
 	zipkin "github.com/openzipkin/zipkin-go-opentracing"
 	"github.com/rai-project/tracer"
 	"github.com/rai-project/utils"
+	context "golang.org/x/net/context"
 )
 
 type Tracer struct {
@@ -22,7 +23,7 @@ func neverSample(_ uint64) bool { return false }
 
 func alwaysSample(_ uint64) bool { return true }
 
-func New(serviceName string) (*Tracer, error) {
+func New(serviceName string) (tracer.Tracer, error) {
 	tracer := &Tracer{}
 	err := tracer.Init(serviceName)
 	if err != nil {
@@ -74,6 +75,18 @@ func (t *Tracer) Init(serviceName string) error {
 	return nil
 }
 
+// startSpanFromContextWithTracer is factored out for testing purposes.
+func (t *Tracer) StartSpanFromContext(ctx context.Context, operationName string, opts ...opentracing.StartSpanOption) (opentracing.Span, context.Context) {
+	var span opentracing.Span
+	if parentSpan := opentracing.SpanFromContext(ctx); parentSpan != nil {
+		opts = append(opts, opentracing.ChildOf(parentSpan.Context()))
+		span = t.StartSpan(operationName, opts...)
+	} else {
+		span = t.StartSpan(operationName, opts...)
+	}
+	return span, opentracing.ContextWithSpan(ctx, span)
+}
+
 func (t *Tracer) Close() error {
 	return t.closer.Close()
 }
@@ -87,5 +100,5 @@ func (t *Tracer) Name() string {
 }
 
 func init() {
-	tracer.Register("zipkin", &Tracer{})
+	tracer.Register("zipkin", &Tracer{}, New)
 }

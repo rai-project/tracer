@@ -7,15 +7,15 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/rai-project/config"
 	"github.com/rai-project/tracer"
+	"github.com/rai-project/tracer/observer"
 	"github.com/uber/jaeger-client-go/transport/zipkin"
 	"github.com/uber/jaeger-lib/metrics"
+	context "golang.org/x/net/context"
 
 	jaeger "github.com/uber/jaeger-client-go"
 
 	zpk "github.com/uber/jaeger-client-go/zipkin"
 )
-
-var opentracingGlobalTracerIsSet bool
 
 type Tracer struct {
 	opentracing.Tracer
@@ -25,7 +25,7 @@ type Tracer struct {
 	initialized bool
 }
 
-func New(serviceName string) (*Tracer, error) {
+func New(serviceName string) (tracer.Tracer, error) {
 	tracer := &Tracer{}
 	err := tracer.Init(serviceName)
 	if err != nil {
@@ -70,7 +70,7 @@ func (t *Tracer) Init(serviceName string) error {
 		jaeger.TracerOptions.Extractor(opentracing.HTTPHeaders, zipkinPropagator),
 		jaeger.TracerOptions.Metrics(jaeger.NewMetrics(metricsFactory, map[string]string{"lib": "jaeger"})),
 		jaeger.TracerOptions.Logger(log),
-		jaeger.TracerOptions.Observer(perfeventsObserver),
+		jaeger.TracerOptions.ContribObserver(&wrapObserver{observer.PerfEvents}),
 		// jaeger.TracerOptions.ContribObserver(contribObserver),
 		jaeger.TracerOptions.Gen128Bit(true),
 		// Zipkin shares span ID between client and server spans; it must be enabled via the following option.
@@ -83,6 +83,18 @@ func (t *Tracer) Init(serviceName string) error {
 	t.serviceName = serviceName
 
 	return nil
+}
+
+// startSpanFromContextWithTracer is factored out for testing purposes.
+func (t *Tracer) StartSpanFromContext(ctx context.Context, operationName string, opts ...opentracing.StartSpanOption) (opentracing.Span, context.Context) {
+	var span opentracing.Span
+	if parentSpan := opentracing.SpanFromContext(ctx); parentSpan != nil {
+		opts = append(opts, opentracing.ChildOf(parentSpan.Context()))
+		span = t.StartSpan(operationName, opts...)
+	} else {
+		span = t.StartSpan(operationName, opts...)
+	}
+	return span, opentracing.ContextWithSpan(ctx, span)
 }
 
 func (t *Tracer) Close() error {
@@ -98,5 +110,5 @@ func (t *Tracer) Name() string {
 }
 
 func init() {
-	tracer.Register("jaeger", &Tracer{})
+	tracer.Register("jaeger", &Tracer{}, New)
 }
