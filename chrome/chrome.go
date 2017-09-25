@@ -6,6 +6,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
+	"github.com/rai-project/tracer"
 	"golang.org/x/net/context"
 )
 
@@ -52,7 +53,7 @@ type publishInfo struct {
 	span       opentracing.Span
 }
 
-func (t Trace) Publish(ctx context.Context, operationName string, opts ...opentracing.StartSpanOption) (opentracing.Span, context.Context, error) {
+func (t Trace) Publish(ctx context.Context, tracer tracer.Tracer, opts ...opentracing.StartSpanOption) error {
 
 	var timeUnit time.Duration
 	switch t.TimeUnit {
@@ -65,24 +66,8 @@ func (t Trace) Publish(ctx context.Context, operationName string, opts ...opentr
 	case "":
 		timeUnit = time.Microsecond
 	default:
-		return nil, nil, errors.Errorf("the display time unit %v is not valid", t.DisplayTimeUnit)
+		return errors.Errorf("the display time unit %v is not valid", t.DisplayTimeUnit)
 	}
-
-	start := t.StartTime
-
-	topOpts := append(
-		[]opentracing.StartSpanOption{
-			opentracing.StartTime(start),
-		},
-		opts...,
-	)
-	span, newCtx := opentracing.StartSpanFromContext(ctx, operationName, topOpts...)
-	if span == nil {
-		return nil, ctx, errors.New("span not found in context")
-	}
-	defer span.FinishWithOptions(opentracing.FinishOptions{
-		FinishTime: t.EndTime,
-	})
 
 	spans := map[string]*publishInfo{}
 
@@ -99,10 +84,9 @@ func (t Trace) Publish(ctx context.Context, operationName string, opts ...opentr
 			for k, v := range event.Args {
 				tags[k] = v
 			}
-			s, _ := opentracing.StartSpanFromContext(
+			s, _ := tracer.StartSpanFromContext(
 				ctx,
 				event.Name,
-				opentracing.ChildOf(span.Context()),
 				opentracing.StartTime(event.Time),
 				tags,
 			)
@@ -136,5 +120,5 @@ func (t Trace) Publish(ctx context.Context, operationName string, opts ...opentr
 		delete(spans, id)
 	}
 
-	return span, newCtx, nil
+	return nil
 }

@@ -26,6 +26,22 @@ func New(serviceName string) (Tracer, error) {
 	return NewFromName(serviceName, backendName)
 }
 
+func MustNew(serviceName string) Tracer {
+	backendName := Config.Provider
+	if backendName == "" || !Config.Enabled {
+		backendName = "noop"
+	}
+	tr, err := NewFromName(serviceName, backendName)
+	if err != nil {
+		// just use the noop tracer
+		tr, err = NewFromName(serviceName, "noop")
+		if err != nil {
+			panic(err)
+		}
+	}
+	return tr
+}
+
 func StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
 	if stdTracer == nil {
 		return nil
