@@ -50,7 +50,7 @@ func (t *Tracer) Init(serviceName string) error {
 	}
 	trans, err := zipkin.NewHTTPTransport(
 		endpoints[0],
-		zipkin.HTTPBatchSize(100),
+		zipkin.HTTPBatchSize(10),
 		// zipkin.HTTPLogger(log),
 	)
 	if err != nil {
@@ -76,7 +76,7 @@ func (t *Tracer) Init(serviceName string) error {
 		jaeger.TracerOptions.ContribObserver(&wrapObserver{observer.PerfEvents}),
 		jaeger.TracerOptions.ContribObserver(&wrapObserver{observer.Instruments}),
 		// jaeger.TracerOptions.ContribObserver(contribObserver),
-		jaeger.TracerOptions.Gen128Bit(true),
+		jaeger.TracerOptions.Gen128Bit(false),
 		// Zipkin shares span ID between client and server spans; it must be enabled via the following option.
 		jaeger.TracerOptions.ZipkinSharedRPCSpan(true),
 	)
