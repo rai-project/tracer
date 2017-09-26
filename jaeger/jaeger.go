@@ -3,10 +3,12 @@ package jaeger
 import (
 	"errors"
 	"io"
+	"runtime"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/rai-project/config"
 	"github.com/rai-project/tracer"
+	"github.com/rai-project/tracer/defaults"
 	"github.com/rai-project/tracer/observer"
 	"github.com/uber/jaeger-client-go/transport/zipkin"
 	"github.com/uber/jaeger-lib/metrics"
@@ -66,6 +68,7 @@ func (t *Tracer) Init(serviceName string) error {
 		jaeger.NewConstSampler(true /*sample all*/),
 		jaeger.NewRemoteReporter(trans),
 		jaeger.TracerOptions.Tag("app", config.App.Name),
+		jaeger.TracerOptions.Tag("perfevents", defaults.PerfEvents),
 		jaeger.TracerOptions.Injector(opentracing.HTTPHeaders, zipkinPropagator),
 		jaeger.TracerOptions.Extractor(opentracing.HTTPHeaders, zipkinPropagator),
 		jaeger.TracerOptions.Metrics(jaeger.NewMetrics(metricsFactory, map[string]string{"lib": "jaeger"})),
@@ -89,6 +92,9 @@ func (t *Tracer) Init(serviceName string) error {
 // startSpanFromContextWithTracer is factored out for testing purposes.
 func (t *Tracer) StartSpanFromContext(ctx context.Context, operationName string, opts ...opentracing.StartSpanOption) (opentracing.Span, context.Context) {
 	var span opentracing.Span
+	if runtime.GOOS == "linux" {
+		opts = append([]opentracing.StartSpanOption{opentracing.Tag{"perfevents", defaults.PerfEvents}}, opts...)
+	}
 	if parentSpan := opentracing.SpanFromContext(ctx); parentSpan != nil {
 		opts = append(opts, opentracing.ChildOf(parentSpan.Context()))
 		span = t.StartSpan(operationName, opts...)

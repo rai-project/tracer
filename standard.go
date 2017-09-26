@@ -2,9 +2,11 @@ package tracer
 
 import (
 	"context"
+	"runtime"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/rai-project/config"
+	"github.com/rai-project/tracer/defaults"
 )
 
 var stdTracer Tracer
@@ -46,6 +48,9 @@ func StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentr
 	if stdTracer == nil {
 		return nil
 	}
+	if runtime.GOOS == "linux" {
+		opts = append(opts, opentracing.Tag{"perfevents", defaults.PerfEvents})
+	}
 	return stdTracer.StartSpan(operationName, opts...)
 }
 
@@ -53,9 +58,8 @@ func StartSpanFromContext(ctx context.Context, operationName string, opts ...ope
 	if stdTracer == nil {
 		return nil, nil
 	}
-	if _, ok := opentracing.GlobalTracer().(opentracing.NoopTracer); ok {
-		log.Error("tracer is using a No-op tracer")
-		return nil, nil
+	if runtime.GOOS == "linux" {
+		opts = append(opts, opentracing.Tag{"perfevents", defaults.PerfEvents})
 	}
 	return opentracing.StartSpanFromContext(ctx, operationName, opts...)
 }
