@@ -8,11 +8,13 @@ import (
 	zipkin "github.com/openzipkin/zipkin-go-opentracing"
 	"github.com/rai-project/tracer"
 	"github.com/rai-project/utils"
+	"github.com/rai-project/uuid"
 	context "golang.org/x/net/context"
 )
 
 type Tracer struct {
 	initialized bool
+	id          string
 	opentracing.Tracer
 	closer      io.Closer
 	endpoints   []string
@@ -30,6 +32,10 @@ func New(serviceName string) (tracer.Tracer, error) {
 		return nil, nil
 	}
 	return tracer, nil
+}
+
+func (t *Tracer) ID() string {
+	return t.id
 }
 
 func (t *Tracer) Init(serviceName string) error {
@@ -67,6 +73,7 @@ func (t *Tracer) Init(serviceName string) error {
 		zipkin.DebugMode(inDebugModeQ),
 	)
 
+	t.id = uuid.NewV4()
 	t.Tracer = tr
 	t.closer = collector
 	t.endpoints = endpoints

@@ -9,7 +9,9 @@ import (
 	"github.com/rai-project/tracer/defaults"
 )
 
-var stdTracer Tracer
+var (
+	stdTracer Tracer
+)
 
 func SetStd(t Tracer) {
 	stdTracer = t
@@ -71,6 +73,18 @@ func Enabled() bool {
 	return Config.Enabled
 }
 
+func Close() error {
+	openTracers.Range(func(_ interface{}, value interface{}) bool {
+		tr, ok := value.(Tracer)
+		if !ok {
+			return true
+		}
+		tr.Close()
+		return true
+	})
+	return nil
+}
+
 func Endpoints() []string {
 	if stdTracer == nil {
 		return []string{}
@@ -83,13 +97,6 @@ func Provider() string {
 		return Config.Provider
 	}
 	return stdTracer.Name()
-}
-
-func Close() {
-	if stdTracer == nil {
-		return
-	}
-	stdTracer.Close()
 }
 
 func init() {

@@ -3,15 +3,24 @@ package noop
 import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/rai-project/tracer"
+	"github.com/rai-project/uuid"
 	context "golang.org/x/net/context"
 )
 
 type Tracer struct {
 	opentracing.NoopTracer
+	id string
 }
 
 func New(serviceName string) (tracer.Tracer, error) {
-	return &Tracer{opentracing.NoopTracer{}}, nil
+	return &Tracer{
+		NoopTracer: opentracing.NoopTracer{},
+		id:         uuid.NewV4(),
+	}, nil
+}
+
+func (t *Tracer) ID() string {
+	return t.id
 }
 
 func (*Tracer) Init(_ string) error {

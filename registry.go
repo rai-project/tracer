@@ -7,7 +7,10 @@ import (
 	"golang.org/x/sync/syncmap"
 )
 
-var tracers syncmap.Map
+var (
+	tracers     syncmap.Map
+	openTracers syncmap.Map
+)
 
 type tracerRegistryItem struct {
 	tracer Tracer
@@ -45,7 +48,12 @@ func NewFromName(serviceName, backendName string) (Tracer, error) {
 			Warn("invalid tracer")
 		return nil, errors.New("invalid tracer")
 	}
-	return tracer.new(serviceName)
+	tr, err := tracer.new(serviceName)
+	if err != nil {
+		return nil, err
+	}
+	openTracers.Store(tr.ID(), tr)
+	return tr, nil
 }
 
 func Register(name string, s Tracer, newFunc func(serviceName string) (Tracer, error)) {

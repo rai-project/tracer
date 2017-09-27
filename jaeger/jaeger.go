@@ -10,6 +10,7 @@ import (
 	"github.com/rai-project/tracer"
 	"github.com/rai-project/tracer/defaults"
 	"github.com/rai-project/tracer/observer"
+	"github.com/rai-project/uuid"
 	"github.com/uber/jaeger-client-go/transport/zipkin"
 	"github.com/uber/jaeger-lib/metrics"
 	context "golang.org/x/net/context"
@@ -21,6 +22,7 @@ import (
 
 type Tracer struct {
 	opentracing.Tracer
+	id          string
 	closer      io.Closer
 	endpoints   []string
 	serviceName string
@@ -34,6 +36,10 @@ func New(serviceName string) (tracer.Tracer, error) {
 		return nil, nil
 	}
 	return tracer, nil
+}
+
+func (t *Tracer) ID() string {
+	return t.id
 }
 
 func (t *Tracer) Init(serviceName string) error {
@@ -81,6 +87,7 @@ func (t *Tracer) Init(serviceName string) error {
 		jaeger.TracerOptions.ZipkinSharedRPCSpan(true),
 	)
 
+	t.id = uuid.NewV4()
 	t.closer = cl
 	t.endpoints = endpoints
 	t.Tracer = tr
