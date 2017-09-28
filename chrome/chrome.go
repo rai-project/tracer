@@ -21,7 +21,14 @@ type TraceEvent struct {
 	ProcessID int64                  `json:"pid,omitempty"`
 	ThreadID  int64                  `json:"tid,omitempty"`
 	Args      map[string]interface{} `json:"args,omitempty"`
+	Stack     int                    `json:"sf,omitempty"`
+	EndStack  int                    `json:"esf,omitempty"`
 	Time      time.Time              `json:"-"`
+}
+
+type EventFrame struct {
+	Name   string `json:"name"`
+	Parent int    `json:"parent,omitempty"`
 }
 
 func (t TraceEvent) ID() string {
@@ -39,6 +46,7 @@ type Trace struct {
 	EndTime         time.Time              `json:"-"`
 	TraceEvents     TraceEvents            `json:"traceEvents,omitempty"`
 	DisplayTimeUnit string                 `json:"displayTimeUnit,omitempty"`
+	Frames          map[string]EventFrame  `json:"stackFrames"`
 	TimeUnit        string                 `json:"timeUnit,omitempty"`
 	OtherData       map[string]interface{} `json:"otherData,omitempty"`
 }
