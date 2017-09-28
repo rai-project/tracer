@@ -4,6 +4,7 @@ import (
 	"context"
 	"runtime"
 
+	"github.com/k0kubun/pp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/rai-project/config"
 	"github.com/rai-project/tracer/defaults"
@@ -37,6 +38,7 @@ func MustNew(serviceName string) Tracer {
 	}
 	tr, err := NewFromName(serviceName, backendName)
 	if err != nil {
+		pp.Println("using noop tracer")
 		// just use the noop tracer
 		tr, err = NewFromName(serviceName, "noop")
 		if err != nil {
