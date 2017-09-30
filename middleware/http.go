@@ -63,7 +63,7 @@ func FromHTTPRequest(tracer tracer.Tracer, operationName string) echo.Middleware
 			wireContext, err := tracer.Extract(opentracing.HTTPHeaders, carrier)
 
 			if err == nil && wireContext != nil {
-				startSpanOpts = append(startSpanOpts, opentracing.FollowsFrom(wireContext))
+				startSpanOpts = append(startSpanOpts, opentracing.ChildOf(wireContext))
 			}
 
 			// create segment
