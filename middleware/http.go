@@ -3,6 +3,7 @@ package middleware
 import (
 	"github.com/labstack/echo"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 	"github.com/rai-project/tracer"
 )
@@ -75,8 +76,12 @@ func FromHTTPRequest(tracer tracer.Tracer, operationName string) echo.Middleware
 			if requestID := c.Response().Header().Get(echo.HeaderXRequestID); requestID != "" {
 				sg.SetTag("request_id", requestID)
 			}
-			sg.SetTag("http_method", req.Method)
-			sg.SetTag("url", req.URL)
+			// record HTTP method
+			ext.HTTPMethod.Set(sg, req.Method)
+			// record HTTP url
+			ext.HTTPUrl.Set(sg, req.URL.String())
+			// record HTTP status code
+			defer ext.HTTPStatusCode.Set(sg, uint16(c.Response().Status))
 
 			defer sg.Finish()
 
