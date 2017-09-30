@@ -78,9 +78,9 @@ func (t *Tracer) Init(serviceName string) error {
 		jaeger.TracerOptions.Injector(opentracing.HTTPHeaders, zipkinPropagator),
 		jaeger.TracerOptions.Extractor(opentracing.HTTPHeaders, zipkinPropagator),
 		jaeger.TracerOptions.Metrics(jaeger.NewMetrics(metricsFactory, map[string]string{"lib": "jaeger"})),
-		jaeger.TracerOptions.Logger(log),
 		jaeger.TracerOptions.ContribObserver(&wrapObserver{observer.PerfEvents}),
 		jaeger.TracerOptions.ContribObserver(&wrapObserver{observer.Instruments}),
+		jaeger.TracerOptions.Logger(log),
 		// jaeger.TracerOptions.ContribObserver(contribObserver),
 		jaeger.TracerOptions.Gen128Bit(false),
 		// Zipkin shares span ID between client and server spans; it must be enabled via the following option.
