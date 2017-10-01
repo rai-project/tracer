@@ -27,6 +27,7 @@ type Tracer struct {
 	endpoints   []string
 	serviceName string
 	initialized bool
+	usingPerf   bool
 }
 
 func New(serviceName string) (tracer.Tracer, error) {
@@ -69,22 +70,28 @@ func (t *Tracer) Init(serviceName string) error {
 	// Adds support for injecting and extracting Zipkin B3 Propagation HTTP headers, for use with other Zipkin collectors.
 	zipkinPropagator := zpk.NewZipkinB3HTTPHeaderPropagator()
 
-	tr, cl := jaeger.NewTracer(
-		serviceName,
-		jaeger.NewConstSampler(true /*sample all*/),
-		jaeger.NewRemoteReporter(trans),
+	tracerOpts := []jaeger.TracerOption{
 		jaeger.TracerOptions.Tag("app", config.App.Name),
 		jaeger.TracerOptions.Tag("perfevents", defaults.PerfEvents),
 		jaeger.TracerOptions.Injector(opentracing.HTTPHeaders, zipkinPropagator),
 		jaeger.TracerOptions.Extractor(opentracing.HTTPHeaders, zipkinPropagator),
 		jaeger.TracerOptions.Metrics(jaeger.NewMetrics(metricsFactory, map[string]string{"lib": "jaeger"})),
-		jaeger.TracerOptions.ContribObserver(&wrapObserver{observer.PerfEvents}),
-		jaeger.TracerOptions.ContribObserver(&wrapObserver{observer.Instruments}),
 		jaeger.TracerOptions.Logger(log),
 		// jaeger.TracerOptions.ContribObserver(contribObserver),
 		jaeger.TracerOptions.Gen128Bit(false),
 		// Zipkin shares span ID between client and server spans; it must be enabled via the following option.
 		jaeger.TracerOptions.ZipkinSharedRPCSpan(true),
+	}
+
+	for _, observer := range observer.Config.Observers {
+		tracerOpts = append(tracerOpts, jaeger.TracerOptions.ContribObserver(&wrapObserver{observer}))
+	}
+
+	tr, cl := jaeger.NewTracer(
+		serviceName,
+		jaeger.NewConstSampler(true /*sample all*/),
+		jaeger.NewRemoteReporter(trans),
+		tracerOpts...,
 	)
 
 	t.id = uuid.NewV4()
@@ -93,13 +100,23 @@ func (t *Tracer) Init(serviceName string) error {
 	t.Tracer = tr
 	t.serviceName = serviceName
 
+	t.usingPerf = false
+	if runtime.GOOS == "linux" {
+		for _, o := range observer.Config.ObserverNames {
+			if o == "perf" || o == "perf_events" {
+				t.usingPerf = true
+				break
+			}
+		}
+	}
+
 	return nil
 }
 
 // startSpanFromContextWithTracer is factored out for testing purposes.
 func (t *Tracer) StartSpanFromContext(ctx context.Context, operationName string, opts ...opentracing.StartSpanOption) (opentracing.Span, context.Context) {
 	var span opentracing.Span
-	if runtime.GOOS == "linux" {
+	if t.usingPerf {
 		opts = append([]opentracing.StartSpanOption{opentracing.Tag{"perfevents", defaults.PerfEvents}}, opts...)
 	}
 	if parentSpan := opentracing.SpanFromContext(ctx); parentSpan != nil {
