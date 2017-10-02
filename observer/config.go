@@ -32,7 +32,7 @@ func (a *observerConfig) Read() {
 	vipertags.Fill(a)
 	for _, observer := range a.ObserverNames {
 		switch observer {
-		case "perf", "perf_events":
+		case "perf", "perf_events", "perfevents":
 			a.Observers = append(a.Observers, PerfEvents)
 			continue
 		case "instruments":

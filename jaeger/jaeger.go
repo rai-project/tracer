@@ -103,7 +103,7 @@ func (t *Tracer) Init(serviceName string) error {
 	t.usingPerf = false
 	if runtime.GOOS == "linux" {
 		for _, o := range observer.Config.ObserverNames {
-			if o == "perf" || o == "perf_events" {
+			if o == "perf" || o == "perf_events" || o == "perfevents" {
 				t.usingPerf = true
 				break
 			}
@@ -117,7 +117,7 @@ func (t *Tracer) Init(serviceName string) error {
 func (t *Tracer) StartSpanFromContext(ctx context.Context, operationName string, opts ...opentracing.StartSpanOption) (opentracing.Span, context.Context) {
 	var span opentracing.Span
 	if t.usingPerf {
-		opts = append([]opentracing.StartSpanOption{opentracing.Tag{"perfevents", defaults.PerfEvents}}, opts...)
+		opts = append(opts, opentracing.Tag{"perfevents", defaults.PerfEvents})
 	}
 	if parentSpan := opentracing.SpanFromContext(ctx); parentSpan != nil {
 		opts = append(opts, opentracing.ChildOf(parentSpan.Context()))
