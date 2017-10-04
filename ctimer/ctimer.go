@@ -60,14 +60,21 @@ func New(data string) (*Trace, error) {
 	return trace, nil
 }
 
-func (t *Trace) Publish(ctx context.Context, tracer tracer.Tracer, opts ...opentracing.StartSpanOption) error {
-	span, ctx := tracer.StartSpanFromContext(
+func (t *Trace) Publish(ctx context.Context, opts ...opentracing.StartSpanOption) error {
+	opts = append(
+		[]opentracing.StartSpanOption{
+			opentracing.StartTime(t.StartTime),
+			opentracing.Tags{
+				"metadata": t.Metadata,
+			},
+		},
+		opts...,
+	)
+	span, ctx := opentracing.StartSpanFromContext(
 		ctx,
 		t.Name,
-		opentracing.StartTime(t.StartTime),
-		opentracing.Tags{
-			"metadata": t.Metadata,
-		})
+		opts...,
+	)
 	span.FinishWithOptions(opentracing.FinishOptions{
 		FinishTime: t.EndTime,
 	})

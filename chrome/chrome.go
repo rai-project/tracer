@@ -6,7 +6,6 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/rai-project/tracer"
 	"golang.org/x/net/context"
 )
 
@@ -64,7 +63,7 @@ type publishInfo struct {
 	span       opentracing.Span
 }
 
-func (t Trace) Publish(ctx context.Context, tracer tracer.Tracer, opts ...opentracing.StartSpanOption) error {
+func (t Trace) Publish(ctx context.Context, opts ...opentracing.StartSpanOption) error {
 
 	var timeUnit time.Duration
 	switch t.TimeUnit {
@@ -95,7 +94,7 @@ func (t Trace) Publish(ctx context.Context, tracer tracer.Tracer, opts ...opentr
 			for k, v := range event.Args {
 				tags[k] = v
 			}
-			s, _ := tracer.StartSpanFromContext(
+			s, _ := opentracing.StartSpanFromContext(
 				ctx,
 				event.Name,
 				opentracing.StartTime(event.Time),
