@@ -10,6 +10,7 @@ import (
 	"github.com/rai-project/tracer"
 	"github.com/rai-project/tracer/defaults"
 	"github.com/rai-project/tracer/observer"
+	raiutils "github.com/rai-project/utils"
 	"github.com/rai-project/uuid"
 	"github.com/uber/jaeger-client-go/transport/zipkin"
 	"github.com/uber/jaeger-lib/metrics"
@@ -72,15 +73,29 @@ func (t *Tracer) Init(serviceName string) error {
 
 	tracerOpts := []jaeger.TracerOption{
 		jaeger.TracerOptions.Tag("app", config.App.Name),
-		jaeger.TracerOptions.Tag("perfevents", defaults.PerfEvents),
+		jaeger.TracerOptions.Tag("host", raiutils.GetHostIP()),
+		jaeger.TracerOptions.Tag("commit_id", "todo"),
 		jaeger.TracerOptions.Injector(opentracing.HTTPHeaders, zipkinPropagator),
 		jaeger.TracerOptions.Extractor(opentracing.HTTPHeaders, zipkinPropagator),
 		jaeger.TracerOptions.Metrics(jaeger.NewMetrics(metricsFactory, map[string]string{"lib": "jaeger"})),
 		jaeger.TracerOptions.Logger(log),
 		// jaeger.TracerOptions.ContribObserver(contribObserver),
-		jaeger.TracerOptions.Gen128Bit(false),
+		jaeger.TracerOptions.Gen128Bit(true),
 		// Zipkin shares span ID between client and server spans; it must be enabled via the following option.
 		jaeger.TracerOptions.ZipkinSharedRPCSpan(true),
+	}
+
+	t.usingPerf = false
+	if runtime.GOOS == "linux" {
+		for _, o := range observer.Config.ObserverNames {
+			if o == "perf" || o == "perf_events" || o == "perfevents" {
+				t.usingPerf = true
+				break
+			}
+		}
+	}
+	if t.usingPerf {
+		tracerOpts = append(tracerOpts, jaeger.TracerOptions.Tag("perfevents", defaults.PerfEvents))
 	}
 
 	for _, observer := range observer.Config.Observers {
@@ -99,16 +114,6 @@ func (t *Tracer) Init(serviceName string) error {
 	t.endpoints = endpoints
 	t.Tracer = tr
 	t.serviceName = serviceName
-
-	t.usingPerf = false
-	if runtime.GOOS == "linux" {
-		for _, o := range observer.Config.ObserverNames {
-			if o == "perf" || o == "perf_events" || o == "perfevents" {
-				t.usingPerf = true
-				break
-			}
-		}
-	}
 
 	return nil
 }
