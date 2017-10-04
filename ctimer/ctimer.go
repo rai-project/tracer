@@ -6,7 +6,6 @@ import (
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/rai-project/tracer"
 	"golang.org/x/net/context"
 )
 
@@ -61,25 +60,10 @@ func New(data string) (*Trace, error) {
 }
 
 func (t *Trace) Publish(ctx context.Context, opts ...opentracing.StartSpanOption) error {
-	opts = append(
-		[]opentracing.StartSpanOption{
-			opentracing.StartTime(t.StartTime),
-			opentracing.Tags{
-				"metadata": t.Metadata,
-			},
-		},
-		opts...,
-	)
-	span, ctx := opentracing.StartSpanFromContext(
-		ctx,
-		t.Name,
-		opts...,
-	)
-	span.FinishWithOptions(opentracing.FinishOptions{
-		FinishTime: t.EndTime,
-	})
+	//span := opentracing.SpanFromContext(ctx)
+	//span.SetTag("metadata", t.Metadata)
 	for _, event := range t.TraceEvents {
-		s, _ := tracer.StartSpanFromContext(
+		s, _ := opentracing.StartSpanFromContext(
 			ctx,
 			event.Name,
 			opentracing.StartTime(event.StartTime),
