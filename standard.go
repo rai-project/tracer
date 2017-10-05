@@ -3,15 +3,18 @@ package tracer
 import (
 	"context"
 	"runtime"
+	"sync"
 
 	"github.com/k0kubun/pp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/rai-project/config"
 	"github.com/rai-project/tracer/defaults"
+	"golang.org/x/sync/syncmap"
 )
 
 var (
 	stdTracer Tracer
+	mut       sync.Mutex
 )
 
 func SetStd(t Tracer) {
@@ -76,6 +79,8 @@ func Enabled() bool {
 }
 
 func Close() error {
+	mut.Lock()
+	defer mut.Unlock()
 	openTracers.Range(func(_ interface{}, value interface{}) bool {
 		tr, ok := value.(Tracer)
 		if !ok {
@@ -84,6 +89,7 @@ func Close() error {
 		tr.Close()
 		return true
 	})
+	openTracers = syncmap.Map{}
 	return nil
 }
 
