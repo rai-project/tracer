@@ -7,6 +7,8 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/rai-project/config"
+	//machineinfo "github.com/rai-project/machine/info"
+	osinfo "github.com/rai-project/machine/os"
 	"github.com/rai-project/tracer"
 	"github.com/rai-project/tracer/defaults"
 	"github.com/rai-project/tracer/observer"
@@ -73,6 +75,9 @@ func (t *Tracer) Init(serviceName string) error {
 
 	tracerOpts := []jaeger.TracerOption{
 		jaeger.TracerOptions.Tag("app", config.App.Name),
+		jaeger.TracerOptions.Tag("arch", runtime.GOARCH),
+		jaeger.TracerOptions.Tag("os", runtime.GOOS),
+		jaeger.TracerOptions.Tag("os_info", osinfo.Info()),
 		jaeger.TracerOptions.Tag("host", raiutils.GetHostIP()),
 		jaeger.TracerOptions.Tag("commit_id", "todo"),
 		jaeger.TracerOptions.Extractor(opentracing.HTTPHeaders, zipkinPropagator),
@@ -84,6 +89,13 @@ func (t *Tracer) Init(serviceName string) error {
 		// Zipkin shares span ID between client and server spans; it must be enabled via the following option.
 		jaeger.TracerOptions.ZipkinSharedRPCSpan(true),
 	}
+
+	//if machineinfo.Info != nil {
+	//	buf := new(bytes.Buffer)
+	//	if err := json.Marshal(machineinfo.Info, buf); err == nil {
+	//		tracerOpts = append(tracerOpts, jaeger.TracerOptions.Tag("machine", string(buf)))
+	//	}
+	//}
 
 	t.usingPerf = false
 	if runtime.GOOS == "linux" {
