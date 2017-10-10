@@ -1,6 +1,8 @@
 package jaeger
 
 import (
+	"strings"
+
 	"github.com/k0kubun/pp"
 	"github.com/rai-project/config"
 	"github.com/rai-project/tracer/utils"
@@ -30,6 +32,12 @@ func (a *jaegerConfig) SetDefaults() {
 func (a *jaegerConfig) Read() {
 	defer close(a.done)
 	vipertags.Fill(a)
+	if len(a.Endpoints) == 0 {
+		return
+	}
+	if strings.HasPrefix(a.Endpoints[0], "udp://") {
+		return
+	}
 	a.Endpoints = fixEndpoints(a.Endpoints)
 }
 

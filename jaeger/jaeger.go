@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"runtime"
+	"strings"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/rai-project/config"
@@ -14,12 +15,12 @@ import (
 	"github.com/rai-project/tracer/observer"
 	raiutils "github.com/rai-project/utils"
 	"github.com/rai-project/uuid"
-	"github.com/uber/jaeger-client-go/transport/zipkin"
 	"github.com/uber/jaeger-lib/metrics"
 	context "golang.org/x/net/context"
 
 	jaeger "github.com/uber/jaeger-client-go"
 
+	"github.com/uber/jaeger-client-go/transport/zipkin"
 	zpk "github.com/uber/jaeger-client-go/zipkin"
 )
 
@@ -58,11 +59,20 @@ func (t *Tracer) Init(serviceName string) error {
 	if len(endpoints) == 0 {
 		return errors.New("no endpoints defined for jaeger tracer")
 	}
-	trans, err := zipkin.NewHTTPTransport(
-		endpoints[0],
-		zipkin.HTTPBatchSize(10),
+	var trans jaeger.Transport
+	var err error
+	if strings.HasPrefix(endpoints[0], "udp://") {
+		trans, err = jaeger.NewUDPTransport(
+			strings.TrimPrefix(endpoints[0], "udp://"),
+			0,
+		)
+	} else {
+		trans, err = zipkin.NewHTTPTransport(
+			endpoints[0],
+			zipkin.HTTPBatchSize(10),
 		// zipkin.HTTPLogger(log),
-	)
+		)
+	}
 	if err != nil {
 		log.WithError(err).Error("Cannot initialize HTTP transport")
 		return err

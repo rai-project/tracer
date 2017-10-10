@@ -30,6 +30,9 @@ func (a *observerConfig) SetDefaults() {
 func (a *observerConfig) Read() {
 	defer close(a.done)
 	vipertags.Fill(a)
+	if len(a.ObserverNames) == 0 {
+		a.ObserverNames = Default
+	}
 	for _, observer := range a.ObserverNames {
 		switch observer {
 		case "perf", "perf_events", "perfevents":
@@ -38,6 +41,12 @@ func (a *observerConfig) Read() {
 		case "instruments":
 			a.Observers = append(a.Observers, Instruments)
 			continue
+		case "meminfo":
+			a.Observers = append(a.Observers, MemInfo)
+		case "gpu_meminfo":
+			a.Observers = append(a.Observers, GPUMemInfo)
+		case "dummy":
+			a.Observers = append(a.Observers, Dummy)
 		}
 	}
 }
