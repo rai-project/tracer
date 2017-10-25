@@ -38,6 +38,10 @@ func (t *Tracer) ID() string {
 	return t.id
 }
 
+func (t *Tracer) Level() tracer.Level {
+	return Config.Level
+}
+
 func (t *Tracer) Init(serviceName string) error {
 	if t.initialized {
 		return nil

@@ -15,6 +15,7 @@ import (
 var (
 	stdTracer Tracer
 	mut       sync.Mutex
+	noop      Tracer
 )
 
 func SetStd(t Tracer) {
@@ -51,9 +52,12 @@ func MustNew(serviceName string) Tracer {
 	return tr
 }
 
-func StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
+func StartSpan(lvl Level, operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
 	if stdTracer == nil {
 		return nil
+	}
+	if lvl < stdTracer.Level() {
+		return noop.StartSpan(operationName, opts...)
 	}
 	if runtime.GOOS == "linux" {
 		opts = append(opts, opentracing.Tag{"perfevents", defaults.PerfEvents})
@@ -61,9 +65,12 @@ func StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentr
 	return stdTracer.StartSpan(operationName, opts...)
 }
 
-func StartSpanFromContext(ctx context.Context, operationName string, opts ...opentracing.StartSpanOption) (opentracing.Span, context.Context) {
+func StartSpanFromContext(ctx context.Context, lvl Level, operationName string, opts ...opentracing.StartSpanOption) (opentracing.Span, context.Context) {
 	if stdTracer == nil {
-		return nil, nil
+		return nil, ctx
+	}
+	if lvl < stdTracer.Level() {
+		return noop.StartSpanFromContext(ctx, operationName, opts...)
 	}
 	if runtime.GOOS == "linux" {
 		opts = append(opts, opentracing.Tag{"perfevents", defaults.PerfEvents})
@@ -120,5 +127,11 @@ func init() {
 			return
 		}
 		SetStd(std)
+
+		no, err := NewFromName(config.App.Name, "noop")
+		if err != nil {
+			return
+		}
+		noop = no
 	})
 }

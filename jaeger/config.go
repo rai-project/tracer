@@ -3,6 +3,8 @@ package jaeger
 import (
 	"strings"
 
+	"github.com/rai-project/tracer"
+
 	"github.com/k0kubun/pp"
 	"github.com/rai-project/config"
 	"github.com/rai-project/tracer/utils"
@@ -10,8 +12,10 @@ import (
 )
 
 type jaegerConfig struct {
-	Endpoints []string      `json:"endpoints" config:"tracer.endpoints" env:"TRACER_ENDPOINTS"`
-	done      chan struct{} `json:"-" config:"-"`
+	Endpoints   []string      `json:"endpoints" config:"tracer.endpoints" env:"TRACER_ENDPOINTS"`
+	LevelString string        `json:"level" config:"tracer.level"`
+	Level       tracer.Level  `json:"-" config:"-"`
+	done        chan struct{} `json:"-" config:"-"`
 }
 
 var (
@@ -39,6 +43,7 @@ func (a *jaegerConfig) Read() {
 		return
 	}
 	a.Endpoints = fixEndpoints(a.Endpoints)
+	a.Level = tracer.LevelFromName(a.LevelString)
 }
 
 func (c jaegerConfig) Wait() {

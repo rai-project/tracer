@@ -23,6 +23,10 @@ func (t *Tracer) ID() string {
 	return t.id
 }
 
+func (t *Tracer) Level() tracer.Level {
+	return tracer.NO_TRACE
+}
+
 func (*Tracer) Init(_ string) error {
 	return nil
 }

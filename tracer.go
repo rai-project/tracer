@@ -14,5 +14,6 @@ type Tracer interface {
 	io.Closer
 	Init(serviceName string) error
 	Name() string
+	Level() Level
 	Endpoints() []string
 }

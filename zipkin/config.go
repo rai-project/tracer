@@ -3,13 +3,16 @@ package zipkin
 import (
 	"github.com/k0kubun/pp"
 	"github.com/rai-project/config"
+	"github.com/rai-project/tracer"
 	"github.com/rai-project/tracer/utils"
 	"github.com/rai-project/vipertags"
 )
 
 type zipkinConfig struct {
-	Endpoints []string      `json:"endpoints" config:"tracer.endpoints" env:"TRACER_ENDPOINTS"`
-	done      chan struct{} `json:"-" config:"-"`
+	Endpoints   []string      `json:"endpoints" config:"tracer.endpoints" env:"TRACER_ENDPOINTS"`
+	LevelString string        `json:"level" config:"tracer.level"`
+	Level       tracer.Level  `json:"-" config:"-"`
+	done        chan struct{} `json:"-" config:"-"`
 }
 
 var (
@@ -31,6 +34,7 @@ func (a *zipkinConfig) Read() {
 	defer close(a.done)
 	vipertags.Fill(a)
 	a.Endpoints = fixEndpoints(a.Endpoints)
+	a.Level = tracer.LevelFromName(a.LevelString)
 }
 
 func (c zipkinConfig) Wait() {
