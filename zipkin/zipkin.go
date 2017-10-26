@@ -19,6 +19,7 @@ type Tracer struct {
 	closer      io.Closer
 	endpoints   []string
 	serviceName string
+	level       tracer.Level
 }
 
 func neverSample(_ uint64) bool { return false }
@@ -40,6 +41,10 @@ func (t *Tracer) ID() string {
 
 func (t *Tracer) Level() tracer.Level {
 	return Config.Level
+}
+
+func (t *Tracer) SetLevel(lvl tracer.Level) {
+	t.level = lvl
 }
 
 func (t *Tracer) Init(serviceName string) error {

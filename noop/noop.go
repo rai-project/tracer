@@ -9,7 +9,8 @@ import (
 
 type Tracer struct {
 	opentracing.NoopTracer
-	id string
+	id    string
+	level tracer.Level
 }
 
 func New(serviceName string) (tracer.Tracer, error) {
@@ -25,6 +26,10 @@ func (t *Tracer) ID() string {
 
 func (t *Tracer) Level() tracer.Level {
 	return tracer.NO_TRACE
+}
+
+func (t *Tracer) SetLevel(lvl tracer.Level) {
+	t.level = lvl
 }
 
 func (*Tracer) Init(_ string) error {

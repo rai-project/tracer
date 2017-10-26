@@ -56,7 +56,7 @@ func StartSpan(lvl Level, operationName string, opts ...opentracing.StartSpanOpt
 	if stdTracer == nil {
 		return nil
 	}
-	if lvl < stdTracer.Level() {
+	if lvl > stdTracer.Level() {
 		return noop.StartSpan(operationName, opts...)
 	}
 	if runtime.GOOS == "linux" {
@@ -69,7 +69,7 @@ func StartSpanFromContext(ctx context.Context, lvl Level, operationName string, 
 	if stdTracer == nil {
 		return nil, ctx
 	}
-	if lvl < stdTracer.Level() {
+	if lvl > stdTracer.Level() {
 		return noop.StartSpanFromContext(ctx, operationName, opts...)
 	}
 	if runtime.GOOS == "linux" {
@@ -112,6 +112,13 @@ func Provider() string {
 		return Config.Provider
 	}
 	return stdTracer.Name()
+}
+
+func SetLevel(lvl Level) {
+	if stdTracer == nil {
+		return
+	}
+	stdTracer.SetLevel(lvl)
 }
 
 func init() {

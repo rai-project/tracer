@@ -32,10 +32,13 @@ type Tracer struct {
 	serviceName string
 	initialized bool
 	usingPerf   bool
+	level       tracer.Level
 }
 
 func New(serviceName string) (tracer.Tracer, error) {
-	tracer := &Tracer{}
+	tracer := &Tracer{
+		level: Config.Level,
+	}
 	err := tracer.Init(serviceName)
 	if err != nil {
 		return nil, nil
@@ -48,7 +51,11 @@ func (t *Tracer) ID() string {
 }
 
 func (t *Tracer) Level() tracer.Level {
-	return Config.Level
+	return t.level
+}
+
+func (t *Tracer) SetLevel(lvl tracer.Level) {
+	t.level = lvl
 }
 
 func (t *Tracer) Init(serviceName string) error {

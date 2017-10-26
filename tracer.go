@@ -15,5 +15,6 @@ type Tracer interface {
 	Init(serviceName string) error
 	Name() string
 	Level() Level
+	SetLevel(Level)
 	Endpoints() []string
 }
