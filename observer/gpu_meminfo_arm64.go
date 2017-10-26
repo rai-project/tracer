@@ -1,4 +1,4 @@
-// +build darwin 
+// +build arm64
 
 package observer
 
