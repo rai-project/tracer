@@ -14,8 +14,8 @@ type TraceEvent struct {
 	Metadata  string    `json:"metadata,omitempty"`
 	Start     int64     `json:"start,omitempty"`
 	End       int64     `json:"end,omitempty"`
-	ProcessID int64     `json:"process_id,omitempty"`
-	ThreadID  int64     `json:"thread_id,omitempty"`
+	ProcessID uint64    `json:"process_id,omitempty"`
+	ThreadID  uint64    `json:"thread_id,omitempty"`
 	StartTime time.Time `json:"-"`
 	EndTime   time.Time `json:"-"`
 }
@@ -60,8 +60,6 @@ func New(data string) (*Trace, error) {
 }
 
 func (t *Trace) Publish(ctx context.Context, opts ...opentracing.StartSpanOption) error {
-	//span := opentracing.SpanFromContext(ctx)
-	//span.SetTag("metadata", t.Metadata)
 	for _, event := range t.TraceEvents {
 		s, _ := opentracing.StartSpanFromContext(
 			ctx,
@@ -73,6 +71,9 @@ func (t *Trace) Publish(ctx context.Context, opts ...opentracing.StartSpanOption
 				"thread_id":  event.ThreadID,
 			},
 		)
+		if s == nil {
+			continue
+		}
 		s.FinishWithOptions(opentracing.FinishOptions{
 			FinishTime: event.EndTime,
 		})
