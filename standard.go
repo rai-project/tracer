@@ -53,10 +53,7 @@ func MustNew(serviceName string) Tracer {
 }
 
 func StartSpan(lvl Level, operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
-	if stdTracer == nil {
-		return nil
-	}
-	if lvl > stdTracer.Level() {
+	if stdTracer == nil || lvl > stdTracer.Level() {
 		return noop.StartSpan(operationName, opts...)
 	}
 	if runtime.GOOS == "linux" {
@@ -66,10 +63,7 @@ func StartSpan(lvl Level, operationName string, opts ...opentracing.StartSpanOpt
 }
 
 func StartSpanFromContext(ctx context.Context, lvl Level, operationName string, opts ...opentracing.StartSpanOption) (opentracing.Span, context.Context) {
-	if stdTracer == nil {
-		return nil, ctx
-	}
-	if lvl > stdTracer.Level() {
+	if stdTracer == nil || lvl > stdTracer.Level() {
 		return noop.StartSpanFromContext(ctx, operationName, opts...)
 	}
 	if runtime.GOOS == "linux" {
