@@ -122,6 +122,13 @@ func SetLevel(lvl Level) {
 }
 
 func init() {
+	loadNoop := func() {
+		no, err := NewFromName("tracer", "noop")
+		if err != nil {
+			return
+		}
+		noop = no
+	}
 	config.AfterInit(func() {
 		std, err := New(config.App.Name)
 		if err != nil {
@@ -134,12 +141,7 @@ func init() {
 			return
 		}
 		SetStd(std)
-
+		loadNoop()
 	})
-
-	no, err := NewFromName("tracer", "noop")
-	if err != nil {
-		return
-	}
-	noop = no
+	loadNoop()
 }
