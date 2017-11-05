@@ -1,4 +1,4 @@
-//+build darwin
+// +build cgo,darwin
 
 package observer
 
