@@ -21,8 +21,10 @@ func FromName(s string) (Tracer, error) {
 	s = strings.ToLower(s)
 	val, ok := tracers.Load(s)
 	if !ok {
-		log.WithField("tracer", s).
-			Warn("cannot find tracer")
+		if s != "noop" {
+			log.WithField("tracer", s).
+				Warn("cannot find tracer")
+		}
 		return nil, errors.New("cannot find tracer")
 	}
 	tracer, ok := val.(tracerRegistryItem)
