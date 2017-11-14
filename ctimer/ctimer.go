@@ -61,17 +61,21 @@ func New(data string) (*Trace, error) {
 
 func (t *Trace) Publish(ctx context.Context, opts ...opentracing.StartSpanOption) error {
 	for _, event := range t.TraceEvents {
+		tags := opentracing.Tags{
+			"metadata":   event.Metadata,
+			"process_id": event.ProcessID,
+			"thread_id":  event.ThreadID,
+		}
 		s, _ := opentracing.StartSpanFromContext(
 			ctx,
 			event.Name,
 			opentracing.StartTime(event.StartTime),
-			opentracing.Tags{
-				"metadata":   event.Metadata,
-				"process_id": event.ProcessID,
-				"thread_id":  event.ThreadID,
-			},
+			tags,
 		)
 		if s == nil {
+			log.WithField("event_name", event.Name).
+				WithField("tags", tags).
+				Error("failed to create span from context")
 			continue
 		}
 		s.FinishWithOptions(opentracing.FinishOptions{
