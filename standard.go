@@ -5,10 +5,10 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/k0kubun/pp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/rai-project/config"
 	"github.com/rai-project/tracer/defaults"
+	"github.com/rai-project/tracer/observer"
 	"golang.org/x/sync/syncmap"
 )
 
@@ -16,6 +16,7 @@ var (
 	stdTracer Tracer
 	mut       sync.Mutex
 	noop      Tracer
+	usingPerf bool
 )
 
 func SetStd(t Tracer) {
@@ -42,7 +43,6 @@ func MustNew(serviceName string) Tracer {
 	}
 	tr, err := NewFromName(serviceName, backendName)
 	if err != nil {
-		pp.Println("using noop tracer")
 		// just use the noop tracer
 		tr, err = NewFromName(serviceName, "noop")
 		if err != nil {
@@ -59,7 +59,7 @@ func StartSpan(lvl Level, operationName string, opts ...opentracing.StartSpanOpt
 	if lvl > stdTracer.Level() {
 		return noop.StartSpan(operationName, opts...)
 	}
-	if runtime.GOOS == "linux" {
+	if usingPerf {
 		opts = append(opts, opentracing.Tag{"perfevents", defaults.PerfEvents})
 	}
 	return stdTracer.StartSpan(operationName, opts...)
@@ -72,7 +72,7 @@ func StartSpanFromContext(ctx context.Context, lvl Level, operationName string, 
 	if lvl > stdTracer.Level() {
 		return noop.StartSpanFromContext(ctx, operationName, opts...)
 	}
-	if runtime.GOOS == "linux" {
+	if usingPerf {
 		opts = append(opts, opentracing.Tag{"perfevents", defaults.PerfEvents})
 	}
 	return opentracing.StartSpanFromContext(ctx, operationName, opts...)
@@ -140,6 +140,15 @@ func init() {
 			return
 		}
 		SetStd(std)
+
+		if runtime.GOOS == "linux" {
+			for _, o := range observer.Config.ObserverNames {
+				if o == "perf" || o == "perf_events" || o == "perfevents" {
+					usingPerf = true
+					break
+				}
+			}
+		}
 	})
 	loadNoop("")
 }

@@ -15,9 +15,8 @@ import (
 	"github.com/rai-project/tracer/observer"
 	raiutils "github.com/rai-project/utils"
 	"github.com/rai-project/uuid"
-	"github.com/uber/jaeger-lib/metrics"
 	context "golang.org/x/net/context"
-
+	//
 	jaeger "github.com/uber/jaeger-client-go"
 
 	"github.com/uber/jaeger-client-go/transport/zipkin"
@@ -80,16 +79,14 @@ func (t *Tracer) Init(serviceName string) error {
 	} else {
 		trans, err = zipkin.NewHTTPTransport(
 			endpoints[0],
-			zipkin.HTTPBatchSize(10),
-		// zipkin.HTTPLogger(log),
+			zipkin.HTTPBatchSize(100),
+			zipkin.HTTPLogger(log),
 		)
 	}
 	if err != nil {
 		log.WithError(err).Error("Cannot initialize HTTP transport")
 		return err
 	}
-
-	metricsFactory := metrics.NewLocalFactory(0)
 
 	// Adds support for injecting and extracting Zipkin B3 Propagation HTTP headers, for use with other Zipkin collectors.
 	zipkinPropagator := zpk.NewZipkinB3HTTPHeaderPropagator()
@@ -100,10 +97,9 @@ func (t *Tracer) Init(serviceName string) error {
 		jaeger.TracerOptions.Tag("os", runtime.GOOS),
 		jaeger.TracerOptions.Tag("os_info", osinfo.Info()),
 		jaeger.TracerOptions.Tag("host", raiutils.GetHostIP()),
-		jaeger.TracerOptions.Tag("commit_id", "todo"),
+		jaeger.TracerOptions.Tag("commit_id", config.App.Version.GitCommit),
 		jaeger.TracerOptions.Extractor(opentracing.HTTPHeaders, zipkinPropagator),
 		jaeger.TracerOptions.Injector(opentracing.HTTPHeaders, zipkinPropagator),
-		jaeger.TracerOptions.Metrics(jaeger.NewMetrics(metricsFactory, map[string]string{"lib": "jaeger"})),
 		jaeger.TracerOptions.Logger(log),
 		// jaeger.TracerOptions.ContribObserver(contribObserver),
 		jaeger.TracerOptions.Gen128Bit(true),
