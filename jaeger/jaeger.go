@@ -80,7 +80,7 @@ func (t *Tracer) Init(serviceName string) error {
 	} else {
 		trans, err = zipkin.NewHTTPTransport(
 			endpoints[0],
-			zipkin.HTTPBatchSize(1000),
+			zipkin.HTTPBatchSize(200),
 			zipkin.HTTPLogger(log),
 		)
 	}
@@ -165,7 +165,7 @@ func (t *Tracer) StartSpanFromContext(ctx context.Context, operationName string,
 }
 
 func (t *Tracer) Close() error {
-	if t.transport {
+	if t.transport != nil {
 		t.transport.Flush()
 		t.transport.Close()
 	}
