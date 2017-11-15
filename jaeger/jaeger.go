@@ -27,6 +27,7 @@ type Tracer struct {
 	opentracing.Tracer
 	id          string
 	closer      io.Closer
+	transport   jaeger.Transport
 	endpoints   []string
 	serviceName string
 	initialized bool
@@ -79,7 +80,7 @@ func (t *Tracer) Init(serviceName string) error {
 	} else {
 		trans, err = zipkin.NewHTTPTransport(
 			endpoints[0],
-			zipkin.HTTPBatchSize(100),
+			zipkin.HTTPBatchSize(1000),
 			zipkin.HTTPLogger(log),
 		)
 	}
@@ -143,6 +144,7 @@ func (t *Tracer) Init(serviceName string) error {
 	t.endpoints = endpoints
 	t.Tracer = tr
 	t.serviceName = serviceName
+	t.transport = trans
 
 	return nil
 }
@@ -163,6 +165,10 @@ func (t *Tracer) StartSpanFromContext(ctx context.Context, operationName string,
 }
 
 func (t *Tracer) Close() error {
+	if t.transport {
+		t.transport.Flush()
+		t.transport.Close()
+	}
 	return t.closer.Close()
 }
 
