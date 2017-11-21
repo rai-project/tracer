@@ -27,7 +27,6 @@ type Tracer struct {
 	opentracing.Tracer
 	id          string
 	closer      io.Closer
-	transport   jaeger.Transport
 	endpoints   []string
 	serviceName string
 	initialized bool
@@ -144,7 +143,6 @@ func (t *Tracer) Init(serviceName string) error {
 	t.endpoints = endpoints
 	t.Tracer = tr
 	t.serviceName = serviceName
-	t.transport = trans
 
 	return nil
 }
@@ -165,10 +163,6 @@ func (t *Tracer) StartSpanFromContext(ctx context.Context, operationName string,
 }
 
 func (t *Tracer) Close() error {
-	if t.transport != nil {
-		t.transport.Flush()
-		t.transport.Close()
-	}
 	return t.closer.Close()
 }
 

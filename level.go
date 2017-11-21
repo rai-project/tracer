@@ -6,7 +6,7 @@ type Level int32
 
 const (
 	NO_TRACE        Level = 0
-	STEP_TRACE            = 1
+	STEP_TRACE      Level = 1
 	FRAMEWORK_TRACE Level = 2
 	CPU_ONLY_TRACE  Level = 3
 	HARDWARE_TRACE  Level = 4

@@ -93,7 +93,10 @@ func Close() error {
 		if !ok {
 			return true
 		}
-		tr.Close()
+		err := tr.Close()
+		if err != nil {
+			log.WithError(err).WithField("tracer", tr.Name()).Error("Failed to close tracer")
+		}
 		return true
 	})
 	openTracers = syncmap.Map{}

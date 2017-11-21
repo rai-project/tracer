@@ -6,6 +6,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
+	"github.com/rai-project/tracer"
 	"golang.org/x/net/context"
 )
 
@@ -94,12 +95,15 @@ func (t Trace) Publish(ctx context.Context, opts ...opentracing.StartSpanOption)
 			for k, v := range event.Args {
 				tags[k] = v
 			}
-			s, _ := opentracing.StartSpanFromContext(
+
+			s, _ := tracer.StartSpanFromContext(
 				ctx,
+				tracer.FRAMEWORK_TRACE,
 				event.Name,
 				opentracing.StartTime(event.Time),
 				tags,
 			)
+
 			if s == nil {
 				continue
 			}
