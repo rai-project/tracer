@@ -7,15 +7,18 @@ import (
 )
 
 type tracerConfig struct {
-	Enabled  bool          `json:"enabled" config:"tracer.enabled" default:"true"`
-	Provider string        `json:"provider" config:"tracer.provider" default:"zipkin"`
-	done     chan struct{} `json:"-" config:"-"`
+	Enabled     bool          `json:"enabled" config:"tracer.enabled" default:"true"`
+	Provider    string        `json:"provider" config:"tracer.provider" default:"zipkin"`
+	LevelString string        `json:"level" config:"tracer.level"`
+	Level       Level         `json:"-" config:"-"`
+	done        chan struct{} `json:"-" config:"-"`
 }
 
 var (
 	// Config holds the data read by rai-project/config
 	Config = &tracerConfig{
-		done: make(chan struct{}),
+		done:  make(chan struct{}),
+		Level: NO_TRACE,
 	}
 )
 
@@ -30,6 +33,7 @@ func (c *tracerConfig) SetDefaults() {
 func (c *tracerConfig) Read() {
 	defer close(c.done)
 	vipertags.Fill(c)
+	c.Level = LevelFromName(c.LevelString)
 }
 
 func (c tracerConfig) Wait() {

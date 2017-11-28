@@ -1,6 +1,8 @@
 package tracer
 
-import "github.com/gogo/protobuf/proto"
+import (
+	"github.com/gogo/protobuf/proto"
+)
 
 type Level int32
 
@@ -40,7 +42,7 @@ var Level_get = map[string]Level{
 
 func LevelFromName(s string) Level {
 	if s == "" {
-		return NO_TRACE
+		return Config.Level
 	}
 	lvl, ok := Level_get[s]
 	if !ok {
