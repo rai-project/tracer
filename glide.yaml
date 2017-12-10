@@ -14,6 +14,7 @@ import:
   version: e6b1ad87c0787de9cb033d4f680fe69cd69e19fe
   subpackages:
   - thrift/gen-go/zipkincore
+- package: github.com/shirou/gopsutil
 - package: github.com/rai-project/aws
 - package: github.com/rai-project/config
 - package: github.com/rai-project/logger
