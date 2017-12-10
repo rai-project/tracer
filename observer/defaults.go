@@ -4,7 +4,7 @@ var (
 	Default = []string{
 	// "perf",
 	// "meminfo",
-	// "gpu_meminfo",
+	"gpu_meminfo",
 	// "dummy",
 	}
 )
