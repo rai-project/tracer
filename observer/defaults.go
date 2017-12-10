@@ -3,7 +3,7 @@ package observer
 var (
 	Default = []string{
 	// "perf",
-	// "meminfo",
+	 "meminfo",
 	"gpu_meminfo",
 	// "dummy",
 	}
