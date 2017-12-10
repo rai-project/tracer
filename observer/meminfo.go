@@ -3,6 +3,7 @@ package observer
 import (
 	"runtime"
 
+  "github.com/shirou/gopsutil/mem"
 	"github.com/opentracing-contrib/go-observer"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/spf13/cast"
@@ -33,11 +34,13 @@ func newMemInfoSpan(s opentracing.Span, opts opentracing.StartSpanOptions) (*mem
 		sp: s,
 	}
 	memStats := getCPUMemUsage()
+  v, _ := mem.VirtualMemory()
 	s.LogFields(
 		olog.String("start_mem_alloc", cast.ToString(memStats.Alloc)),
 		olog.String("start_mem_total_alloc", cast.ToString(memStats.TotalAlloc)),
 		olog.String("start_mem_heap_alloc", cast.ToString(memStats.HeapAlloc)),
 		olog.String("start_mem_heap_sys", cast.ToString(memStats.HeapSys)),
+		olog.String("start_mem_sys", v.String()),
 	)
 
 	return so, true
@@ -51,11 +54,13 @@ func (so *memInfoSpan) OnSetTag(key string, value interface{}) {
 
 func (so *memInfoSpan) OnFinish(options opentracing.FinishOptions) {
 	memStats := getCPUMemUsage()
+  v, _ := mem.VirtualMemory()
 	so.sp.LogFields(
 		olog.String("finish_mem_alloc", cast.ToString(memStats.Alloc)),
 		olog.String("finish_mem_total_alloc", cast.ToString(memStats.TotalAlloc)),
 		olog.String("finish_mem_heap_alloc", cast.ToString(memStats.HeapAlloc)),
 		olog.String("finish_mem_heap_sys", cast.ToString(memStats.HeapSys)),
+		olog.String("finish_mem_sys", v.String()),
 	)
 }
 
