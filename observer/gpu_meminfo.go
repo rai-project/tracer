@@ -4,17 +4,18 @@ package observer
 
 import (
 	"fmt"
+
+	"github.com/k0kubun/pp"
 	"github.com/opentracing-contrib/go-observer"
 	opentracing "github.com/opentracing/opentracing-go"
+	olog "github.com/opentracing/opentracing-go/log"
+	"github.com/rai-project/config"
 	nvml "github.com/rai-project/nvml-go"
 	"github.com/spf13/cast"
-	"github.com/k0kubun/pp"
-	"github.com/rai-project/config"
-	olog "github.com/opentracing/opentracing-go/log"
 )
 
 var (
-	GPUMemInfo otobserver.Observer 
+	GPUMemInfo otobserver.Observer
 )
 
 func init() {
@@ -34,7 +35,7 @@ func newGPUMemInfo() *gpuMemInfo {
 		panic(pp.Sprint("failed to init nvml = ", err))
 	}
 
-	count, err := nvml.DeviceCount()	
+	count, err := nvml.DeviceCount()
 	if err != nil {
 		panic(err)
 	}
@@ -55,10 +56,10 @@ func newGPUMemInfo() *gpuMemInfo {
 
 // OnStartSpan creates a new gpuMemInfo for the span
 func (o *gpuMemInfo) OnStartSpan(sp opentracing.Span, operationName string, options opentracing.StartSpanOptions) (otobserver.SpanObserver, bool) {
-  if operationName != "Predict" {
-    return noopObserver{}
-  }
-  return newGPUMemInfoSpan(o, sp, options)
+	if operationName != "Predict" {
+		return nil, false
+	}
+	return newGPUMemInfoSpan(o, sp, options)
 }
 
 // SpanDummy collects perfevent metrics
@@ -70,7 +71,7 @@ type gpuMemInfoSpan struct {
 // NewSpanDummy creates a new SpanDummy that can emit perfevent
 // metrics
 func newGPUMemInfoSpan(info *gpuMemInfo, s opentracing.Span, opts opentracing.StartSpanOptions) (*gpuMemInfoSpan, bool) {
-	
+
 	so := &gpuMemInfoSpan{
 		gpuMemInfo: info,
 		sp:         s,
@@ -78,13 +79,13 @@ func newGPUMemInfoSpan(info *gpuMemInfo, s opentracing.Span, opts opentracing.St
 	for ii, handle := range so.handles {
 		meminfo, err := nvml.DeviceMemoryInformation(handle)
 		if err != nil {
-			 continue
+			continue
 		}
 		prefix := fmt.Sprintf("start_gpu[%v]_", ii)
 		s.LogFields(
-			olog.String(prefix + "mem_used", cast.ToString(meminfo.Used)),
-			olog.String(prefix + "mem_free", cast.ToString(meminfo.Free)),
-			olog.String(prefix + "mem_total", cast.ToString(meminfo.Total)),
+			olog.String(prefix+"mem_used", cast.ToString(meminfo.Used)),
+			olog.String(prefix+"mem_free", cast.ToString(meminfo.Free)),
+			olog.String(prefix+"mem_total", cast.ToString(meminfo.Total)),
 		)
 	}
 
@@ -101,13 +102,13 @@ func (so *gpuMemInfoSpan) OnFinish(options opentracing.FinishOptions) {
 	for ii, handle := range so.handles {
 		meminfo, err := nvml.DeviceMemoryInformation(handle)
 		if err != nil {
-			continue 
+			continue
 		}
 		prefix := fmt.Sprintf("finish_gpu[%v]_", ii)
 		so.sp.LogFields(
-			olog.String(prefix + "mem_used", cast.ToString(meminfo.Used)),
-			olog.String(prefix + "mem_free", cast.ToString(meminfo.Free)),
-			olog.String(prefix + "mem_total", cast.ToString(meminfo.Total)),
+			olog.String(prefix+"mem_used", cast.ToString(meminfo.Used)),
+			olog.String(prefix+"mem_free", cast.ToString(meminfo.Free)),
+			olog.String(prefix+"mem_total", cast.ToString(meminfo.Total)),
 		)
 	}
 }

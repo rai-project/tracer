@@ -3,9 +3,9 @@ package observer
 import (
 	"runtime"
 
-  "github.com/shirou/gopsutil/mem"
 	"github.com/opentracing-contrib/go-observer"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/shirou/gopsutil/mem"
 	"github.com/spf13/cast"
 
 	olog "github.com/opentracing/opentracing-go/log"
@@ -19,10 +19,10 @@ type memInfo struct{}
 
 // OnStartSpan creates a new memInfo for the span
 func (o memInfo) OnStartSpan(sp opentracing.Span, operationName string, options opentracing.StartSpanOptions) (otobserver.SpanObserver, bool) {
-	 if operationName != "Predict" {
-    return noopObserver{}
-  }
-  return newMemInfoSpan(sp, options)
+	if operationName != "Predict" {
+		return nil, false
+	}
+	return newMemInfoSpan(sp, options)
 }
 
 // SpanDummy collects perfevent metrics
@@ -37,7 +37,7 @@ func newMemInfoSpan(s opentracing.Span, opts opentracing.StartSpanOptions) (*mem
 		sp: s,
 	}
 	memStats := getCPUMemUsage()
-  v, _ := mem.VirtualMemory()
+	v, _ := mem.VirtualMemory()
 	s.LogFields(
 		olog.String("start_mem_alloc", cast.ToString(memStats.Alloc)),
 		olog.String("start_mem_total_alloc", cast.ToString(memStats.TotalAlloc)),
@@ -57,7 +57,7 @@ func (so *memInfoSpan) OnSetTag(key string, value interface{}) {
 
 func (so *memInfoSpan) OnFinish(options opentracing.FinishOptions) {
 	memStats := getCPUMemUsage()
-  v, _ := mem.VirtualMemory()
+	v, _ := mem.VirtualMemory()
 	so.sp.LogFields(
 		olog.String("finish_mem_alloc", cast.ToString(memStats.Alloc)),
 		olog.String("finish_mem_total_alloc", cast.ToString(memStats.TotalAlloc)),
