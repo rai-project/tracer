@@ -19,7 +19,10 @@ type memInfo struct{}
 
 // OnStartSpan creates a new memInfo for the span
 func (o memInfo) OnStartSpan(sp opentracing.Span, operationName string, options opentracing.StartSpanOptions) (otobserver.SpanObserver, bool) {
-	return newMemInfoSpan(sp, options)
+	 if operationName != "Predict" {
+    return noopObserver{}
+  }
+  return newMemInfoSpan(sp, options)
 }
 
 // SpanDummy collects perfevent metrics
