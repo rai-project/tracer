@@ -55,7 +55,10 @@ func newGPUMemInfo() *gpuMemInfo {
 
 // OnStartSpan creates a new gpuMemInfo for the span
 func (o *gpuMemInfo) OnStartSpan(sp opentracing.Span, operationName string, options opentracing.StartSpanOptions) (otobserver.SpanObserver, bool) {
-	return newGPUMemInfoSpan(o, sp, options)
+  if operationName != "Predict" {
+    return noopObserver{}
+  }
+  return newGPUMemInfoSpan(o, sp, options)
 }
 
 // SpanDummy collects perfevent metrics
