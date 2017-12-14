@@ -43,7 +43,11 @@ func newMemInfoSpan(s opentracing.Span, opts opentracing.StartSpanOptions) (*mem
 		olog.String("start_mem_total_alloc", cast.ToString(memStats.TotalAlloc)),
 		olog.String("start_mem_heap_alloc", cast.ToString(memStats.HeapAlloc)),
 		olog.String("start_mem_heap_sys", cast.ToString(memStats.HeapSys)),
-		olog.String("start_mem_sys", v.String()),
+	)
+	s.LogFields(
+		olog.String("start_mem_sys_available", cast.ToString(v.Available)),
+		olog.String("start_mem_sys_free", cast.ToString(v.Free)),
+		olog.String("start_mem_sys_total", cast.ToString(v.Total)),
 	)
 
 	return so, true
@@ -63,7 +67,11 @@ func (so *memInfoSpan) OnFinish(options opentracing.FinishOptions) {
 		olog.String("finish_mem_total_alloc", cast.ToString(memStats.TotalAlloc)),
 		olog.String("finish_mem_heap_alloc", cast.ToString(memStats.HeapAlloc)),
 		olog.String("finish_mem_heap_sys", cast.ToString(memStats.HeapSys)),
-		olog.String("finish_mem_sys", v.String()),
+	)
+	so.sp.LogFields(
+		olog.String("finish_mem_sys_available", cast.ToString(v.Available)),
+		olog.String("finish_mem_sys_free", cast.ToString(v.Free)),
+		olog.String("finish_mem_sys_total", cast.ToString(v.Total)),
 	)
 }
 
