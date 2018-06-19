@@ -9,9 +9,9 @@ import:
   version: ~2.3.0
 - package: github.com/labstack/echo
 - package: github.com/opentracing/opentracing-go
-  version: master
+  version: ^1.0.2
 - package: github.com/openzipkin/zipkin-go-opentracing
-  version: e6b1ad87c0787de9cb033d4f680fe69cd69e19fe
+  version: ^0.3.3
   subpackages:
   - thrift/gen-go/zipkincore
 - package: github.com/shirou/gopsutil
@@ -23,7 +23,7 @@ import:
 - package: github.com/sirupsen/logrus
   version: ^1.0.0
 - package: github.com/uber/jaeger-client-go
-  version: master
+  version: ^2.14.1
   subpackages:
   - transport/zipkin
 - package: golang.org/x/sync
