@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"context"
 	opentracing "github.com/opentracing/opentracing-go"
-	"golang.org/x/net/context"
 )
 
 type TraceEvent struct {

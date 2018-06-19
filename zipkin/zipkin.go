@@ -4,12 +4,12 @@ import (
 	"errors"
 	"io"
 
+	context "context"
 	opentracing "github.com/opentracing/opentracing-go"
 	zipkin "github.com/openzipkin/zipkin-go-opentracing"
 	"github.com/rai-project/tracer"
 	"github.com/rai-project/utils"
 	"github.com/rai-project/uuid"
-	context "golang.org/x/net/context"
 )
 
 type Tracer struct {

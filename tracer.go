@@ -3,8 +3,8 @@ package tracer
 import (
 	"io"
 
+	context "context"
 	opentracing "github.com/opentracing/opentracing-go"
-	context "golang.org/x/net/context"
 )
 
 type Tracer interface {

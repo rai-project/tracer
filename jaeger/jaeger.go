@@ -9,13 +9,13 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/rai-project/config"
 	//machineinfo "github.com/rai-project/machine/info"
+	context "context"
 	osinfo "github.com/rai-project/machine/os"
 	"github.com/rai-project/tracer"
 	"github.com/rai-project/tracer/defaults"
 	"github.com/rai-project/tracer/observer"
 	raiutils "github.com/rai-project/utils"
 	"github.com/rai-project/uuid"
-	context "golang.org/x/net/context"
 	//
 	jaeger "github.com/uber/jaeger-client-go"
 

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
+	"context"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/rai-project/tracer"
-	"golang.org/x/net/context"
 )
 
 // Trace is an entry of trace format.

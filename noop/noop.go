@@ -1,10 +1,10 @@
 package noop
 
 import (
+	context "context"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/rai-project/tracer"
 	"github.com/rai-project/uuid"
-	context "golang.org/x/net/context"
 )
 
 type Tracer struct {
