@@ -1,4 +1,6 @@
 // +build !darwin,!arm64
+// +build !nogpu
+// +build cgo
 
 package observer
 
