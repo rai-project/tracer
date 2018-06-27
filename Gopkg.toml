@@ -137,6 +137,6 @@
   go-tests = true
   unused-packages = true
 
-[[constraint]]
+[[override]]
   branch = "master"
   name = "github.com/apache/thrift"
