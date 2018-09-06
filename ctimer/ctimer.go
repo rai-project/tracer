@@ -6,18 +6,20 @@ import (
 	"time"
 
 	"context"
+
 	opentracing "github.com/opentracing/opentracing-go"
 )
 
 type TraceEvent struct {
-	Name      string    `json:"name,omitempty"`
-	Metadata  string    `json:"metadata,omitempty"`
-	Start     int64     `json:"start,omitempty"`
-	End       int64     `json:"end,omitempty"`
-	ProcessID uint64    `json:"process_id,omitempty"`
-	ThreadID  uint64    `json:"thread_id,omitempty"`
-	StartTime time.Time `json:"-"`
-	EndTime   time.Time `json:"-"`
+	Name               string    `json:"name,omitempty"`
+	Metadata           string    `json:"metadata,omitempty"`
+	Start              int64     `json:"start,omitempty"`
+	End                int64     `json:"end,omitempty"`
+	ProcessID          uint64    `json:"process_id,omitempty"`
+	ThreadID           uint64    `json:"thread_id,omitempty"`
+	LayerSequenceIndex uint64    `json:"layer_sequence_index"`
+	StartTime          time.Time `json:"-"`
+	EndTime            time.Time `json:"-"`
 }
 
 func (t TraceEvent) ID() string {
