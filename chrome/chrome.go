@@ -19,8 +19,8 @@ type TraceEvent struct {
 	EventType string                 `json:"ph,omitempty"`
 	Timestamp int64                  `json:"ts,omitempty"`  // displayTimeUnit
 	Duration  time.Duration          `json:"dur,omitempty"` // displayTimeUnit
-	ProcessID int64                  `json:"pid,omitempty"`
-	ThreadID  int64                  `json:"tid,omitempty"`
+	ProcessID uint64                 `json:"pid"`
+	ThreadID  uint64                 `json:"tid,omitempty"`
 	Args      map[string]interface{} `json:"args,omitempty"`
 	Stack     int                    `json:"sf,omitempty"`
 	EndStack  int                    `json:"esf,omitempty"`
@@ -88,7 +88,7 @@ func (t Trace) Publish(ctx context.Context, opts ...opentracing.StartSpanOption)
 			tags := opentracing.Tags{
 				"category":   event.Category,
 				"process_id": event.ProcessID,
-				"thread_id":  event.ThreadID,
+        "thread_id":  event.ThreadID,
 				// "start_timestamp": timeUnit * time.Duration(event.Timestamp),
 				// "start_time":      startTime,
 			}
