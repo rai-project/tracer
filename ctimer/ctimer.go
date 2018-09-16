@@ -13,11 +13,13 @@ import (
 type TraceEvent struct {
 	Name               string    `json:"name,omitempty"`
 	Metadata           string    `json:"metadata,omitempty"`
+	LayerType          string    `json:"layer_type,omitempty"`
 	Start              int64     `json:"start,omitempty"`
 	End                int64     `json:"end,omitempty"`
 	ProcessID          uint64    `json:"process_id,omitempty"`
 	ThreadID           uint64    `json:"thread_id,omitempty"`
-	LayerSequenceIndex uint64    `json:"layer_sequence_index"`
+	LayerSequenceIndex int64     `json:"layer_sequence_index,omitempty"`
+	Shapes             [][]int64 `json:"shapes,omitempty"`
 	StartTime          time.Time `json:"-"`
 	EndTime            time.Time `json:"-"`
 }
@@ -57,33 +59,54 @@ func New(data string) (*Trace, error) {
 	for ii, event := range trace.TraceEvents {
 		trace.TraceEvents[ii].StartTime = time.Unix(0, event.Start)
 		trace.TraceEvents[ii].EndTime = time.Unix(0, event.End)
+		if event.LayerType == "" {
+			trace.TraceEvents[ii].LayerType = trace.Metadata
+		}
 	}
 	return trace, nil
 }
 
+func (event *TraceEvent) Publish(ctx context.Context, opts ...opentracing.StartSpanOption) error {
+	tags := opentracing.Tags{
+		"metadata":   event.Metadata,
+		"process_id": event.ProcessID,
+		"thread_id":  event.ThreadID,
+	}
+	if event.LayerType != "" {
+		tags["layer_type"] = event.LayerType
+	}
+	if event.LayerSequenceIndex != 0 {
+		tags["layer_sequence_index"] = event.LayerSequenceIndex
+	}
+	if len(event.Shapes) != 0 {
+		bts, err := json.Marshal(event.Shapes)
+		if err == nil {
+			tags["shapes"] = string(bts)
+		}
+	}
+	s, _ := opentracing.StartSpanFromContext(
+		ctx,
+		event.Name,
+		opentracing.StartTime(event.StartTime),
+		tags,
+	)
+	if s == nil {
+		log.WithField("event_name", event.Name).
+			WithField("tags", tags).
+			Error("failed to create span from context")
+		return nil
+	}
+	s.FinishWithOptions(opentracing.FinishOptions{
+		FinishTime: event.EndTime,
+	})
+	return nil
+}
+
 func (t *Trace) Publish(ctx context.Context, opts ...opentracing.StartSpanOption) error {
 	for _, event := range t.TraceEvents {
-		tags := opentracing.Tags{
-			"metadata":   event.Metadata,
-			"process_id": event.ProcessID,
-			"thread_id":  event.ThreadID,
+		if err := event.Publish(ctx, opts...); err != nil {
+			return err
 		}
-		s, _ := opentracing.StartSpanFromContext(
-			ctx,
-			event.Name,
-			opentracing.StartTime(event.StartTime),
-			tags,
-		)
-		if s == nil {
-			log.WithField("event_name", event.Name).
-				WithField("tags", tags).
-				Error("failed to create span from context")
-			continue
-		}
-		s.FinishWithOptions(opentracing.FinishOptions{
-			FinishTime: event.EndTime,
-		})
 	}
-
 	return nil
 }
