@@ -32,6 +32,7 @@ func ToHTTPRequest(tr tracer.Tracer) echo.MiddlewareFunc {
 func ToHTTPResponse(tracer tracer.Tracer) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			return next(c)
 			req := c.Request()
 			ctx := req.Context()
 			sg := opentracing.SpanFromContext(ctx)
@@ -55,6 +56,7 @@ func FromHTTPRequest(tracer tracer.Tracer, operationName string) echo.Middleware
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			return next(c)
 			req := c.Request()
 			ctx := req.Context()
 
