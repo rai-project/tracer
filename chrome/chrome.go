@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"context"
+
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/rai-project/tracer"
@@ -88,7 +89,7 @@ func (t Trace) Publish(ctx context.Context, opts ...opentracing.StartSpanOption)
 			tags := opentracing.Tags{
 				"category":   event.Category,
 				"process_id": event.ProcessID,
-        "thread_id":  event.ThreadID,
+				"thread_id":  event.ThreadID,
 				// "start_timestamp": timeUnit * time.Duration(event.Timestamp),
 				// "start_time":      startTime,
 			}
