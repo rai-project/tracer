@@ -59,6 +59,7 @@ func StartSpan(lvl Level, operationName string, opts ...opentracing.StartSpanOpt
 	if lvl > stdTracer.Level() {
 		return noop.StartSpan(operationName, opts...)
 	}
+	opts = append(opts, opentracing.Tag{"trace_level", lvl.String()})
 	if usingPerf {
 		opts = append(opts, opentracing.Tag{"perfevents", defaults.PerfEvents})
 	}
@@ -72,6 +73,7 @@ func StartSpanFromContext(ctx context.Context, lvl Level, operationName string, 
 	if lvl > stdTracer.Level() {
 		return noop.StartSpanFromContext(ctx, operationName, opts...)
 	}
+	opts = append(opts, opentracing.Tag{"trace_level", lvl.String()})
 	if usingPerf {
 		opts = append(opts, opentracing.Tag{"perfevents", defaults.PerfEvents})
 	}
