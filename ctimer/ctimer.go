@@ -8,6 +8,7 @@ import (
 	"context"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/rai-project/tracer"
 )
 
 type TraceEvent struct {
@@ -66,7 +67,7 @@ func New(data string) (*Trace, error) {
 	return trace, nil
 }
 
-func (event *TraceEvent) Publish(ctx context.Context, opts ...opentracing.StartSpanOption) error {
+func (event *TraceEvent) Publish(ctx context.Context, lvl tracer.Level, opts ...opentracing.StartSpanOption) error {
 	tags := opentracing.Tags{
 		"metadata":   event.Metadata,
 		"process_id": event.ProcessID,
@@ -84,8 +85,9 @@ func (event *TraceEvent) Publish(ctx context.Context, opts ...opentracing.StartS
 			tags["shapes"] = string(bts)
 		}
 	}
-	s, _ := opentracing.StartSpanFromContext(
+	s, _ := tracer.StartSpanFromContext(
 		ctx,
+		lvl,
 		event.Name,
 		opentracing.StartTime(event.StartTime),
 		tags,
@@ -102,9 +104,9 @@ func (event *TraceEvent) Publish(ctx context.Context, opts ...opentracing.StartS
 	return nil
 }
 
-func (t *Trace) Publish(ctx context.Context, opts ...opentracing.StartSpanOption) error {
+func (t *Trace) Publish(ctx context.Context, lvl tracer.Level, opts ...opentracing.StartSpanOption) error {
 	for _, event := range t.TraceEvents {
-		if err := event.Publish(ctx, opts...); err != nil {
+		if err := event.Publish(ctx, lvl, opts...); err != nil {
 			return err
 		}
 	}
