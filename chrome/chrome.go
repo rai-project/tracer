@@ -65,7 +65,7 @@ type publishInfo struct {
 	span       opentracing.Span
 }
 
-func (t Trace) Publish(ctx context.Context, opts ...opentracing.StartSpanOption) error {
+func (t Trace) Publish(ctx context.Context, lvl tracer.Level, opts ...opentracing.StartSpanOption) error {
 
 	var timeUnit time.Duration
 	switch t.TimeUnit {
@@ -99,7 +99,7 @@ func (t Trace) Publish(ctx context.Context, opts ...opentracing.StartSpanOption)
 
 			s, _ := tracer.StartSpanFromContext(
 				ctx,
-				tracer.FRAMEWORK_TRACE,
+				lvl,
 				event.Name,
 				opentracing.StartTime(event.Time),
 				tags,
