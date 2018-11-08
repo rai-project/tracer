@@ -3,13 +3,13 @@ package tracer
 type Level int32
 
 const (
-	NO_TRACE          Level = 0
-	APPLICATION_TRACE Level = 1
-	MODEL_TRACE       Level = 2
-	FRAMEWORK_TRACE   Level = 3
-	LIBRARY_TRACE     Level = 4
-	HARDWARE_TRACE    Level = 5
-	FULL_TRACE        Level = 6
+	NO_TRACE Level = iota
+	APPLICATION_TRACE
+	MODEL_TRACE
+	FRAMEWORK_TRACE
+	LIBRARY_TRACE
+	HARDWARE_TRACE
+	FULL_TRACE
 )
 
 func LevelFromName(s string) Level {
