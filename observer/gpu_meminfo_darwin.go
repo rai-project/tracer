@@ -1,4 +1,5 @@
-// +build darwin 
+// +build !nogpu
+// +build !linux
 
 package observer
 
