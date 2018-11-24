@@ -30,10 +30,6 @@
   version = "1.14.10"
 
 [[constraint]]
-  name = "github.com/gogo/protobuf"
-  version = "1.1.1"
-
-[[constraint]]
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
   version = "1.0.0"
 
@@ -44,10 +40,6 @@
 [[constraint]]
   name = "github.com/labstack/echo"
   version = "3.3.5"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/mailru/easyjson"
 
 [[constraint]]
   branch = "master"
