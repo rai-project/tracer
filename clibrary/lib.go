@@ -53,9 +53,3 @@ func StartSpanFromContext(inCtx uintptr, lvl int32, operationName string, tags m
 	sp, ctx := tracer.StartSpanFromContext(toContext(inCtx), tracer.Level(lvl), operationName, cTags(tags))
 	return fromSpan(sp), fromContext(ctx)
 }
-
-//export Add
-func Add(a, b uint, result *uint) *C.char {
-	*result = uint(a + b)
-	return nil
-}
