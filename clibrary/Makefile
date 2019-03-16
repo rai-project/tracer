@@ -9,7 +9,7 @@ RAI_TRACER_LIB_SUFFIX     := so
 # Support reproducible builds by embedding date according to SOURCE_DATE_EPOCH if present
 DATE                      := $(shell date -u -d "@$(SOURCE_DATE_EPOCH)" '+%FT%T%z' 2>/dev/null || date -u '+%FT%T%z')
 # BUILDFLAGS                := -buildmode=c-archive -ldflags '-linkmode external -w -extldflags "-v -static"' -gcflags="-B"
-BUILDFLAGS                := -buildmode=c-shared -ldflags '-linkmode external -s -w -extldflags "-v -static"' -gcflags="-B"
+BUILDFLAGS                := -x -buildmode=c-shared -ldflags '-linkmode external -compressdwarf=true -s -w -extldflags "-v -static"' -gcflags="-B"
 TESTFLAGS                 ?=
 PWD                       := $(shell pwd)
 PREFIX                    ?= $(GOPATH)
