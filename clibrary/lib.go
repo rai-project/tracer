@@ -42,8 +42,14 @@ func StartSpan(lvl int32, operationName string, tags map[string]string) uintptr 
 	return fromSpan(tracer.StartSpan(tracer.Level(lvl), operationName, cTags(tags)))
 }
 
-//export FinishSpan
-func FinishSpan(spPtr uintptr) {
+//export SpanAddTag
+func SpanAddTag(spPtr uintptr, key, val string) {
+	sp := toSpan(spPtr)
+	sp.SetTag(key, val)
+}
+
+//export SpanFinish
+func SpanFinish(spPtr uintptr) {
 	sp := toSpan(spPtr)
 	sp.Finish()
 }
