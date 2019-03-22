@@ -54,6 +54,7 @@ require (
 	github.com/rai-project/logger v0.0.0-20181119115247-3edfaed4af1c
 	github.com/rai-project/machine v0.0.0-20181119123731-e20c9a49017c
 	github.com/rai-project/nvml-go v0.0.0-20181121025807-4e1189bcc320
+	github.com/rai-project/tracer v0.2.0 // indirect
 	github.com/rai-project/utils v0.0.0-20181119122706-be23e9dad62b
 	github.com/rai-project/uuid v0.0.0-20181119122706-2a4c8b922cc6
 	github.com/rai-project/vipertags v0.0.0-20181119122706-8cbaab517f5d
