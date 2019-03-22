@@ -35,8 +35,8 @@ func toContext(ctx uintptr) context.Context {
 	return *((*context.Context)(unsafe.Pointer(ctx)))
 }
 
-//export StartSpan
-func StartSpan(lvl int32, operationName string, tags map[string]string) uintptr {
+//export SpanStart
+func SpanStart(lvl int32, operationName string, tags map[string]string) uintptr {
 	// sp := tracer.StartSpan(tracer.Level(lvl), operationName, opentracing.Tags(tags))
 	// return (uintptr)(unsafe.Pointer(&sp))
 	return fromSpan(tracer.StartSpan(tracer.Level(lvl), operationName, cTags(tags)))
@@ -46,6 +46,24 @@ func StartSpan(lvl int32, operationName string, tags map[string]string) uintptr 
 func SpanAddTag(spPtr uintptr, key, val string) {
 	sp := toSpan(spPtr)
 	sp.SetTag(key, val)
+}
+
+//export SpanAddTags
+func SpanAddTags(spPtr uintptr, len int, keys []string, vals []string) {
+	sp := toSpan(spPtr)
+	for ii := 0; ii < len; ii++ {
+		sp.SetTag(keys[ii], vals[ii])
+	}
+}
+
+//export SpanAddArgumentsTag
+func SpanAddArgumentsTag(spPtr uintptr, len int, keys []string, vals []string) {
+	sp := toSpan(spPtr)
+	args := make(map[string]string, len)
+	for ii := 0; ii < len; ii++ {
+		args[keys[ii]] = vals[ii]
+	}
+	sp.SetTag("arguments", args)
 }
 
 //export SpanFinish

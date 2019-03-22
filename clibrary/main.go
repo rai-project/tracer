@@ -7,7 +7,6 @@ import (
 
 	"github.com/k0kubun/pp"
 
-	"github.com/Unknwon/com"
 	"github.com/fatih/color"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/rai-project/config"
@@ -44,14 +43,10 @@ func init() {
 	if c, err := homedir.Expand(CfgFile); err == nil {
 		CfgFile = c
 	}
-	if config.IsValidRemotePrefix(CfgFile) {
-		opts = append(opts, config.ConfigRemotePath(CfgFile))
-	} else if com.IsFile(CfgFile) {
-		if c, err := filepath.Abs(CfgFile); err == nil {
-			CfgFile = c
-		}
-		opts = append(opts, config.ConfigFileAbsolutePath(CfgFile))
+	if c, err := filepath.Abs(CfgFile); err == nil {
+		CfgFile = c
 	}
+	opts = append(opts, config.ConfigFileAbsolutePath(CfgFile))
 
 	if AppSecret != "" {
 		opts = append(opts, config.AppSecret(AppSecret))
