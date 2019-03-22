@@ -36,10 +36,10 @@ func toContext(ctx uintptr) context.Context {
 }
 
 //export SpanStart
-func SpanStart(lvl int32, operationName string, tags map[string]string) uintptr {
+func SpanStart(lvl int32, operationName string) uintptr {
 	// sp := tracer.StartSpan(tracer.Level(lvl), operationName, opentracing.Tags(tags))
 	// return (uintptr)(unsafe.Pointer(&sp))
-	return fromSpan(tracer.StartSpan(tracer.Level(lvl), operationName, cTags(tags)))
+	return fromSpan(tracer.StartSpan(tracer.Level(lvl), operationName))
 }
 
 //export SpanAddTag
