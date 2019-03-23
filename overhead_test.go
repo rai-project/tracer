@@ -1,30 +1,29 @@
-package tracer
+package tracer_test
 
 import (
 	"context"
 	"testing"
-	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/rai-project/config"
+	"github.com/rai-project/tracer"
 	_ "github.com/rai-project/tracer/jaeger"
 )
 
 func BenchmarkTracer(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		var span opentracing.Span
-		ctx := context.Background()
-		span, ctx = StartSpanFromContext(ctx, FULL_TRACE, "test_run")
-		time.Sleep(time.Second)
+		span := tracer.StartSpan( tracer.FULL_TRACE, "test_run")
 		span.Finish()
-		Close()
 	}
+  tracer.Close()
 }
 
-func init() {
-	config.Init(
-		config.AppName("carml"),
-		config.DebugMode(true),
-		config.VerboseMode(true),
-	)
+
+func BenchmarkTracerWithContext(b *testing.B) {
+		ctx := context.Background()
+	for n := 0; n < b.N; n++ {
+		var span opentracing.Span
+		span, ctx = tracer.StartSpanFromContext(ctx, tracer.FULL_TRACE, "test_run")
+		span.Finish()
+	}
+  tracer.Close()
 }
