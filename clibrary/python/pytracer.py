@@ -10,7 +10,7 @@ import traceback
 
 logging.basicConfig()
 logger = logging.getLogger("pytracer")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.WARN)
 
 
 try:
@@ -80,6 +80,7 @@ class Tracer(object):
                 self.libraitracer.SpanFinish.restype = None
                 self.libraitracer.SpanFinish.argtypes = [ctypes.c_size_t]
 
+                self._spanStartFromContext(0, self.prog_argv[0])
                 break
             except OSError as e:
                 logger.debug("failed to load RAI Tracer from {}".format(path))
@@ -89,7 +90,7 @@ class Tracer(object):
 
     def __del__(self):
         if self.globalSpanCtx is not None:
-            print("__del = ", self.globalSpanCtx.span)
+            # print("__del = ", self.globalSpanCtx.span)
             self._spanFinish(span_id=self.globalSpanCtx.span)
         if self.libraitracer is not None:
             self.libraitracer.TracerClose()
@@ -130,7 +131,7 @@ class Tracer(object):
 
     def _addTag(self, span_id, key, val):
         if self.libraitracer is not None:
-            print(span_id)
+            # print(span_id)
             # print(val)
             self.libraitracer.SpanAddTag(
                 span_id,

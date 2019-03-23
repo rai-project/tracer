@@ -22,7 +22,7 @@ static void BM_CTracer(benchmark::State &state) {
   }
 }
 
-BENCHMARK(BM_CTracer);
+// BENCHMARK(BM_CTracer);
 
 static void BM_CTracerWithContext(benchmark::State &state) {
   SpanStartFromContext_return spanctx = SpanStartFromContext(
