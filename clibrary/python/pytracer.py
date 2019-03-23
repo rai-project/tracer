@@ -116,16 +116,18 @@ class Tracer(object):
             self.libraitracer.TracerClose()
 
     def _spanStart(self, operationName):
-        if self.libraitracer:
+        if self.libraitracer is not None:
             logger.debug("spanstart {}".format(operationName))
             self.spanID = self.libraitracer.SpanStart(
-                APPLICATION_TRACE, ctypes.c_char_p(str.encode(operationName))
+                ctypes.c_int(APPLICATION_TRACE),
+                ctypes.c_char_p(str.encode(operationName)),
             )
+            print(self.spanID)
 
     def _spanFinish(self, operationName):
-        if self.libraitracer:
+        if self.libraitracer is not None:
             logger.debug("spansfinish {}".format(operationName))
-            self.libraitracer.SpanFinish(self.spanID)
+            self.libraitracer.SpanFinish(ctypes.c_void_p(self.spanID))
 
     def tracefunc(self, frame, event, arg, ranges=[[]], mode=[None]):
 
