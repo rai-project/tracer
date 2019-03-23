@@ -6,12 +6,14 @@ import (
 
 import (
 	"context"
+	"math"
 	"sync"
 	"unsafe"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/rai-project/tracer"
 	_ "github.com/rai-project/tracer/jaeger"
+	"gitlab.com/NebulousLabs/fastrand"
 	// _ "github.com/rai-project/tracer/noop"
 	// _ "github.com/rai-project/tracer/zipkin"
 )
@@ -47,7 +49,7 @@ func fromContext(ctx context.Context) uintptr {
 
 //go:nosplit
 func (s spanMap) Add(sp opentracing.Span) uintptr {
-	id := fromSpan(sp)
+	id := uintptr(fastrand.Uint64n(math.MaxUint64))
 	s.Lock()
 	s.spans[id] = sp
 	s.Unlock()
@@ -71,7 +73,7 @@ func (s spanMap) Delete(id uintptr) {
 
 //go:nosplit
 func (s contextMap) Add(ctx context.Context) uintptr {
-	id := fromContext(ctx)
+	id := uintptr(fastrand.Uint64n(math.MaxUint64))
 	s.Lock()
 	s.contexts[id] = ctx
 	s.Unlock()
@@ -80,6 +82,9 @@ func (s contextMap) Add(ctx context.Context) uintptr {
 
 //go:nosplit
 func (s contextMap) Get(id uintptr) context.Context {
+	if id == 0 {
+		return context.Background()
+	}
 	s.Lock()
 	res := s.contexts[id]
 	s.Unlock()
@@ -88,6 +93,9 @@ func (s contextMap) Get(id uintptr) context.Context {
 
 //go:nosplit
 func (s contextMap) Delete(id uintptr) {
+	if id == 0 {
+		return
+	}
 	s.Lock()
 	delete(s.contexts, id)
 	s.Unlock()
@@ -97,6 +105,12 @@ func (s contextMap) Delete(id uintptr) {
 func SpanStart(lvl int32, operationName string) uintptr {
 	sp := tracer.StartSpan(tracer.Level(lvl), operationName)
 	return spans.Add(sp)
+}
+
+//export SpanStartFromContext
+func SpanStartFromContext(inCtx uintptr, lvl int32, operationName string) (uintptr, uintptr) {
+	sp, ctx := tracer.StartSpanFromContext(contexts.Get(inCtx), tracer.Level(lvl), operationName)
+	return spans.Add(sp), contexts.Add(ctx)
 }
 
 //export SpanAddTag
@@ -130,14 +144,6 @@ func SpanFinish(spPtr uintptr) {
 		sp.Finish()
 	}
 	spans.Delete(spPtr)
-}
-
-//export SpanStartFromContext
-func SpanStartFromContext(inCtx uintptr, lvl int32, operationName string) (uintptr, uintptr) {
-	sp, ctx := tracer.StartSpanFromContext(contexts.Get(inCtx), tracer.Level(lvl), operationName)
-	// ctx = opentracing.ContextWithSpan(ctx, sp)
-	// pp.Println(ctx)
-	return spans.Add(sp), contexts.Add(ctx)
 }
 
 //export ContextNewBackground

@@ -8,14 +8,17 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/rai-project/config"
+
 	//machineinfo "github.com/rai-project/machine/info"
 	context "context"
+
 	osinfo "github.com/rai-project/machine/os"
 	"github.com/rai-project/tracer"
 	"github.com/rai-project/tracer/defaults"
 	"github.com/rai-project/tracer/observer"
 	raiutils "github.com/rai-project/utils"
 	"github.com/rai-project/uuid"
+
 	//
 	jaeger "github.com/uber/jaeger-client-go"
 
@@ -149,16 +152,10 @@ func (t *Tracer) Init(serviceName string) error {
 
 // startSpanFromContextWithTracer is factored out for testing purposes.
 func (t *Tracer) StartSpanFromContext(ctx context.Context, operationName string, opts ...opentracing.StartSpanOption) (opentracing.Span, context.Context) {
-	var span opentracing.Span
-	if t.usingPerf {
-		opts = append(opts, opentracing.Tag{"perfevents", defaults.PerfEvents})
-	}
 	if parentSpan := opentracing.SpanFromContext(ctx); parentSpan != nil {
 		opts = append(opts, opentracing.ChildOf(parentSpan.Context()))
-		span = t.StartSpan(operationName, opts...)
-	} else {
-		span = t.StartSpan(operationName, opts...)
 	}
+	span := t.StartSpan(operationName, opts...)
 	return span, opentracing.ContextWithSpan(ctx, span)
 }
 

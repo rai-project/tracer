@@ -28,40 +28,68 @@ GoString to_go_string(const char *e) {
 static void BM_CTracer(benchmark::State &state) {
   for (auto _ : state) {
     auto iter_span =
-        SpanStart(LIBRARY_TRACE, detail::to_go_string("iteration"));
+        SpanStart(APPLICATION_TRACE, detail::to_go_string("iteration"));
     benchmark::DoNotOptimize(iter_span);
     SpanFinish(iter_span);
   }
 }
 
-BENCHMARK(BM_CTracer);
+// BENCHMARK(BM_CTracer);
 
 static void BM_CTracerWithContext(benchmark::State &state) {
   SpanStartFromContext_return spanctx =
-      SpanStartFromContext(ContextNewBackground(), LIBRARY_TRACE,
+      SpanStartFromContext(ContextNewBackground(), APPLICATION_TRACE,
                            detail::to_go_string("CTracerWithContext"));
   auto span = spanctx.r0;
   auto ctx = spanctx.r1;
   for (auto _ : state) {
     SpanStartFromContext_return iter_spanctx = SpanStartFromContext(
-        ctx, LIBRARY_TRACE, detail::to_go_string("iteration_ctx"));
+        ctx, APPLICATION_TRACE, detail::to_go_string("iteration_ctx"));
     auto iter_span = iter_spanctx.r0;
     auto iter_ctx = iter_spanctx.r1;
-    std::cout << "ctx = " << iter_ctx << "\n";
+    // std::cout << "ctx = " << iter_ctx << "\n";
     // std::this_thread::sleep_for(std::chrono::seconds(1));
     benchmark::DoNotOptimize(iter_span);
-    // benchmark::DoNotOptimize(iter_ctx);
+    benchmark::DoNotOptimize(iter_ctx);
     SpanFinish(iter_span);
-    // ContextDelete(iter_ctx);
+    ContextDelete(iter_ctx);
   }
   SpanFinish(span);
   ContextDelete(ctx);
 }
 
-// BENCHMARK(BM_CTracerWithContext);
+BENCHMARK(BM_CTracerWithContext);
+
+void test() {
+
+  SpanStartFromContext_return spanctx1 =
+      SpanStartFromContext(ContextNewBackground(), APPLICATION_TRACE,
+                           detail::to_go_string("CTracerWithContext"));
+  auto span1 = spanctx1.r0;
+  auto ctx1 = spanctx1.r1;
+
+  SpanStartFromContext_return spanctx2 = SpanStartFromContext(
+      ctx1, APPLICATION_TRACE, detail::to_go_string("iteration"));
+  auto span2 = spanctx2.r0;
+  auto ctx2 = spanctx2.r1;
+
+  std::cout << "Ctx1 = " << std::hex << ctx1 << "\n";
+  std::cout << "Ctx2 = " << std::hex << ctx2 << "\n";
+
+  // ContextDelete(ctx2);
+  SpanFinish(span2);
+
+  // ContextDelete(ctx1);
+  SpanFinish(span1);
+}
 
 int main(int argc, char **argv) {
   TracerInit();
+  TracerSetLevel(FULL_TRACE);
   benchmark::Initialize(&argc, argv);
   benchmark::RunSpecifiedBenchmarks();
+  // test();
+
+  // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  TracerClose();
 }

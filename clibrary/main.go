@@ -5,6 +5,8 @@ import "C"
 import (
 	"path/filepath"
 
+	"github.com/rai-project/tracer"
+
 	"github.com/k0kubun/pp"
 
 	"github.com/fatih/color"
@@ -21,6 +23,16 @@ var (
 	CfgFile   string
 	log       *logrus.Entry = logrus.New().WithField("pkg", "tracer/clibrary")
 )
+
+//export TracerSetLevel
+func TracerSetLevel(lvl int32) {
+	tracer.SetLevel(tracer.Level(lvl))
+}
+
+//export TracerClose
+func TracerClose() {
+	tracer.Close()
+}
 
 //export TracerInit
 func TracerInit() {

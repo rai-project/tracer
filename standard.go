@@ -77,7 +77,7 @@ func StartSpanFromContext(ctx context.Context, lvl Level, operationName string, 
 	if usingPerf {
 		opts = append(opts, opentracing.Tag{"perfevents", defaults.PerfEvents})
 	}
-	return opentracing.StartSpanFromContext(ctx, operationName, opts...)
+	return stdTracer.StartSpanFromContext(ctx, operationName, opts...)
 }
 
 func Enabled() bool {
