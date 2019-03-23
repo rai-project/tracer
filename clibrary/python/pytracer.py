@@ -7,6 +7,7 @@ import logging
 import ctypes
 import inspect
 import traceback
+from distutils import sysconfig
 
 logging.basicConfig()
 logger = logging.getLogger("pytracer")
@@ -81,6 +82,7 @@ class Tracer(object):
                 self.libraitracer.SpanFinish.argtypes = [ctypes.c_size_t]
 
                 self._spanStartFromContext(0, self.prog_argv[0])
+                self.init_libpath()
                 break
             except OSError as e:
                 logger.debug("failed to load RAI Tracer from {}".format(path))
@@ -192,10 +194,11 @@ class Tracer(object):
                 if function_name == "_unsettrace":
                     return self.tracefunc
             else:
-                # skip builtins
-                if inspect.isbuiltin(arg):
-                    return self.tracefunc
                 function_name = arg.__name__
+
+            # skip builtins
+            if inspect.isbuiltin(arg):
+                return self.tracefunc
 
             # skip any imports
             if "importlib" in frame.f_code.co_filename:
@@ -204,6 +207,9 @@ class Tracer(object):
                 return self.tracefunc
 
             module = inspect.getmodule(frame)
+
+            if module and self.is_module_stdlib(module.__file__):
+                return self.tracefunc
 
             # if we have come across the init of a module, don't record ranges until it returns
             if module and function_name == "<module>":
@@ -218,7 +224,7 @@ class Tracer(object):
             # if module is None:
             #     return tracefunc
 
-            span_id = self._spanStart(frame.f_code.co_name)
+            span_id = self._spanStart(function_name)
             if event == "call":
                 self._add_full_name(span_id, frame, module=module)
             else:
@@ -273,6 +279,22 @@ class Tracer(object):
             sys.exit(1)
         except SystemExit:
             pass
+
+    def init_libpath(self):
+        self.lib_path = sysconfig.get_python_lib()
+        path = os.path.split(self.lib_path)
+        if path[1] == "site-packages":
+            self.lib_path = path[0]
+        self.lib_path = self.lib_path.lower()
+
+    def is_module_stdlib(self, file_name):
+        """
+        Returns True if the file_name is in the lib directory. Used to check
+        if a function is in the standard library or not.
+        """
+        if "torch" in file_name.lower():
+            return False
+        return file_name.lower().startswith(self.lib_path)
 
 
 def main():
