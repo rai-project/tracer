@@ -98,33 +98,34 @@ class Tracer(object):
             "librai_tracer.so",
             os.environ["GOPATH"]
             + "/src/github.com/rai-project/tracer/clibrary/dist/MacOSX-x86-64/librai_tracer.so",
-            "/usr/local/lib/librai_tracer.so",
         ]
         for path in RAITRACER_PATHS:
             try:
                 self.libraitracer = ctypes.cdll.LoadLibrary(path)
+                self.libraitracer.TracerInit()
+                logger.info("loaded RAI Tracer from {}".format(path))
+                break
             except OSError as e:
                 logger.debug("failed to load RAI Tracer from {}".format(path))
                 self.libraitracer = None
-            else:
-                logger.info("loaded RAI Tracer from {}".format(path))
-                break
         if not self.libraitracer:
             logger.error("couldn't load any of {}".format(RAITRACER_PATHS))
+
+    def __del__(self):
+        if self.libraitracer is not None:
+            self.libraitracer.TracerClose()
 
     def _spanStart(self, operationName):
         if self.libraitracer:
             logger.debug("spanstart {}".format(operationName))
-            # self.libraitracer.SpanStart(
-            #     ctypes.c_int(p0), ctypes.c_char_p(str.encode(p1))
-            # )
+            self.spanID = self.libraitracer.SpanStart(
+                APPLICATION_TRACE, ctypes.c_char_p(str.encode(operationName))
+            )
 
     def _spanFinish(self, operationName):
         if self.libraitracer:
             logger.debug("spansfinish {}".format(operationName))
-            self.libraitracer.SpanFinish(
-                APPLICATION_TRACE, ctypes.c_char_p(str.encode(operationName))
-            )
+            self.libraitracer.SpanFinish(self.spanID)
 
     def tracefunc(self, frame, event, arg, ranges=[[]], mode=[None]):
 
@@ -179,12 +180,6 @@ class Tracer(object):
             range_name = ".".join(name)
             ranges[0].append(frame)
             self._spanStart(range_name)
-        # elif event == "c_return":
-        #     # arg is the c function object
-        #     frame_depth = depth[0]
-        #     depth[0] -= 1
-        #     if DEPTH_LIMIT and depth[0] > DEPTH_LIMIT:
-        #         return tracefunc
         elif event == "return" or event == "c_return":
             # don't record exit of _settrace (won't see call)
             # if frame.f_code.co_name == "_settrace":
@@ -259,6 +254,8 @@ def main():
     t = Tracer(prog_argv)
 
     t.run()
+
+    del t
 
 
 if __name__ == "__main__":
