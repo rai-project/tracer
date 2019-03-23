@@ -8,7 +8,6 @@ import (
 	"context"
 	"math"
 	"sync"
-	"unsafe"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/rai-project/tracer"
@@ -36,16 +35,6 @@ var (
 		contexts: make(map[uintptr]context.Context),
 	}
 )
-
-//go:nosplit
-func fromSpan(sp opentracing.Span) uintptr {
-	return (uintptr)(unsafe.Pointer(&sp))
-}
-
-//go:nosplit
-func fromContext(ctx context.Context) uintptr {
-	return (uintptr)(unsafe.Pointer(&ctx))
-}
 
 //go:nosplit
 func (s spanMap) Add(sp opentracing.Span) uintptr {

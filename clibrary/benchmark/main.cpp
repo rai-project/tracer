@@ -34,7 +34,7 @@ static void BM_CTracer(benchmark::State &state) {
   }
 }
 
-// BENCHMARK(BM_CTracer);
+BENCHMARK(BM_CTracer);
 
 static void BM_CTracerWithContext(benchmark::State &state) {
   SpanStartFromContext_return spanctx =
@@ -48,7 +48,6 @@ static void BM_CTracerWithContext(benchmark::State &state) {
     auto iter_span = iter_spanctx.r0;
     auto iter_ctx = iter_spanctx.r1;
     // std::cout << "ctx = " << iter_ctx << "\n";
-    // std::this_thread::sleep_for(std::chrono::seconds(1));
     benchmark::DoNotOptimize(iter_span);
     benchmark::DoNotOptimize(iter_ctx);
     SpanFinish(iter_span);
