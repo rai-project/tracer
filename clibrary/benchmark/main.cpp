@@ -2,6 +2,7 @@
 #include <chrono>          // for high_resolution_clock
 
 #include <benchmark/benchmark.h>
+#include <iostream>
 #include <string>
 #include <thread>
 
@@ -24,16 +25,40 @@ GoString to_go_string(const char *e) {
 }
 } // namespace detail
 
-static void BM_Tracer(benchmark::State &state) {
+static void BM_CTracer(benchmark::State &state) {
   for (auto _ : state) {
-    auto __span = SpanStart(LIBRARY_TRACE, detail::to_go_string("test_run"));
-    // std::this_thread::sleep_for(std::chrono::seconds(1));
-    benchmark::DoNotOptimize(__span);
-    SpanFinish(__span);
+    auto iter_span =
+        SpanStart(LIBRARY_TRACE, detail::to_go_string("iteration"));
+    benchmark::DoNotOptimize(iter_span);
+    SpanFinish(iter_span);
   }
 }
-// Register the function as a benchmark
-BENCHMARK(BM_Tracer);
+
+BENCHMARK(BM_CTracer);
+
+static void BM_CTracerWithContext(benchmark::State &state) {
+  SpanStartFromContext_return spanctx =
+      SpanStartFromContext(ContextNewBackground(), LIBRARY_TRACE,
+                           detail::to_go_string("CTracerWithContext"));
+  auto span = spanctx.r0;
+  auto ctx = spanctx.r1;
+  for (auto _ : state) {
+    SpanStartFromContext_return iter_spanctx = SpanStartFromContext(
+        ctx, LIBRARY_TRACE, detail::to_go_string("iteration_ctx"));
+    auto iter_span = iter_spanctx.r0;
+    auto iter_ctx = iter_spanctx.r1;
+    std::cout << "ctx = " << iter_ctx << "\n";
+    // std::this_thread::sleep_for(std::chrono::seconds(1));
+    benchmark::DoNotOptimize(iter_span);
+    // benchmark::DoNotOptimize(iter_ctx);
+    SpanFinish(iter_span);
+    // ContextDelete(iter_ctx);
+  }
+  SpanFinish(span);
+  ContextDelete(ctx);
+}
+
+// BENCHMARK(BM_CTracerWithContext);
 
 int main(int argc, char **argv) {
   TracerInit();
