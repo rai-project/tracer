@@ -16,7 +16,7 @@ static const GoInt32 FULL_TRACE = 6;
 
 static void BM_CTracer(benchmark::State &state) {
   for (auto _ : state) {
-    auto iter_span = SpanStart(APPLICATION_TRACE, "iteration");
+    auto iter_span = SpanStart(APPLICATION_TRACE, (char *)"iteration");
     benchmark::DoNotOptimize(iter_span);
     SpanFinish(iter_span);
   }
@@ -26,12 +26,12 @@ BENCHMARK(BM_CTracer);
 
 static void BM_CTracerWithContext(benchmark::State &state) {
   SpanStartFromContext_return spanctx = SpanStartFromContext(
-      ContextNewBackground(), APPLICATION_TRACE, "CTracerWithContext");
+      ContextNewBackground(), APPLICATION_TRACE, (char *)"CTracerWithContext");
   auto span = spanctx.r0;
   auto ctx = spanctx.r1;
   for (auto _ : state) {
     SpanStartFromContext_return iter_spanctx =
-        SpanStartFromContext(ctx, APPLICATION_TRACE, "iteration_ctx");
+        SpanStartFromContext(ctx, APPLICATION_TRACE, (char *)"iteration_ctx");
     auto iter_span = iter_spanctx.r0;
     auto iter_ctx = iter_spanctx.r1;
     // std::cout << "ctx = " << iter_ctx << "\n";
@@ -49,12 +49,12 @@ BENCHMARK(BM_CTracerWithContext);
 void test() {
 
   SpanStartFromContext_return spanctx1 = SpanStartFromContext(
-      ContextNewBackground(), APPLICATION_TRACE, "CTracerWithContext");
+      ContextNewBackground(), APPLICATION_TRACE, (char *)"CTracerWithContext");
   auto span1 = spanctx1.r0;
   auto ctx1 = spanctx1.r1;
 
   SpanStartFromContext_return spanctx2 =
-      SpanStartFromContext(ctx1, APPLICATION_TRACE, "iteration");
+      SpanStartFromContext(ctx1, APPLICATION_TRACE, (char *)"iteration");
   auto span2 = spanctx2.r0;
   auto ctx2 = spanctx2.r1;
 

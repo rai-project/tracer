@@ -16,10 +16,13 @@ find_package(benchmark CONFIG REQUIRED)
 
 set(CLibrary_dist_dir ${PROJECT_SOURCE_DIR}/../dist/MacOSX-x86-64)
 
+SET(CMAKE_FIND_LIBRARY_SUFFIXES .a .so .dylib)
+
 add_executable(bench main.cpp)
 set_property(TARGET bench PROPERTY CXX_STANDARD 14)
 target_include_directories(bench PUBLIC ${CLibrary_dist_dir})
 find_library(TRACER_LIBRARY rai_tracer HINTS ${CLibrary_dist_dir})
+message(STATUS "lib = ${TRACER_LIBRARY}")
 target_link_libraries(bench benchmark::benchmark ${TRACER_LIBRARY} pthread)
 if(APPLE)
   set(CMAKE_FIND_FRAMEWORK ONLY)
