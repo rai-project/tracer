@@ -10,13 +10,10 @@ import traceback
 
 logging.basicConfig()
 logger = logging.getLogger("pytracer")
-logger.setLevel(logging.WARN)
+logger.setLevel(logging.DEBUG)
 
 DEPTH_LIMIT = None
 
-# https://docs.python.org/2/library/sys.html#sys.setprofile
-# https://docs.python.org/2/library/inspect.html
-# https://gist.github.com/techtonik/2151727
 
 try:
     import threading
@@ -25,7 +22,10 @@ except ImportError:
 
     def _unsettrace():
         sys.setprofile(None)
+
+
 else:
+
     def _settrace(func):
         threading.setprofile(func)
         sys.setprofile(func)
@@ -33,6 +33,15 @@ else:
     def _unsettrace():
         sys.setprofile(None)
         threading.setprofile(None)
+
+
+NO_TRACE = 0
+APPLICATION_TRACE = 1
+MODEL_TRACE = 2
+FRAMEWORK_TRACE = 3
+LIBRARY_TRACE = 4
+HARDWARE_TRACE = 5
+FULL_TRACE = 6
 
 
 def function_full_name(function, module=None):
@@ -56,12 +65,12 @@ def full_name(frame, module=None):
 
     if module:
         name.append(module.__name__)
-    if 'self' in frame.f_locals:
+    if "self" in frame.f_locals:
         # I don't know any way to detect call from the object method
         # XXX: there seems to be no way to detect static method call - it will
         #      be just a function call
         try:
-            class_name = frame.f_locals['self'].__class__.__name__
+            class_name = frame.f_locals["self"].__class__.__name__
         except KeyError:
             class_name = None
         if class_name:
@@ -81,33 +90,34 @@ class Tracer(object):
         self.libcudart = None
         # load the rai tracer library
         RAITRACER_PATHS = [
-            'librai_tracer.so',
-            '/usr/local/lib/librai_tracer.so',
+            "librai_tracer.so",
+            os.environ["GOPATH"]
+            + "/src/github.com/rai-project/tracer/clibrary/dist/MacOSX-x86-64/librai_tracer.so",
+            "/usr/local/lib/librai_tracer.so",
         ]
         for path in RAITRACER_PATHS:
             try:
                 self.libraitracer = ctypes.cdll.LoadLibrary(path)
             except OSError as e:
-                logger.debug(
-                    "failed to load RAI Tracer from {}".format(path))
+                logger.debug("failed to load RAI Tracer from {}".format(path))
                 self.libraitracer = None
             else:
-                logger.info(
-                    "loaded RAI Tracer from {}".format(path))
+                logger.info("loaded RAI Tracer from {}".format(path))
                 break
         if not self.libraitracer:
             logger.error("couldn't load any of {}".format(RAITRACER_PATHS))
 
-    def _spanStart(self, p0, p1):
+    def _spanStart(self, operationName):
         if self.libraitracer:
-            logger.debug("spanstart {}".format(s))
-            self.libraitracer.SpanStart(ctypes.c_int(
-                p0), ctypes.c_char_p(str.encode(p1)))
+            logger.debug("spanstart {}".format(operationName))
+            # self.libraitracer.SpanStart(
+            #     ctypes.c_int(p0), ctypes.c_char_p(str.encode(p1))
+            # )
 
-    def _spanFinish(self, p0):
+    def _spanFinish(self, operationName):
         if self.libraitracer:
-            logger.debug("spanfinish")
-            self.libraitracer.SpanFinish(ctypes.c_void_p(p0))
+            logger.debug("spansfinish {}".format(operationName))
+            # self.libraitracer.SpanFinish(ctypes.c_void_p(p0))
 
     def tracefunc(self, frame, event, arg, ranges=[[]], mode=[None]):
 
@@ -178,7 +188,7 @@ class Tracer(object):
             #     return tracefunc
             if ranges[0]:
                 if ranges[0][-1] == frame:
-                    self._spanFinish()
+                    self._spanFinish(".".join(full_name(frame)))
                     ranges[0] = ranges[0][:-1]
                     # name = full_name(frame)
 
@@ -202,18 +212,20 @@ class Tracer(object):
         sys.path[0] = os.path.split(progname)[0]
         try:
             with open(progname) as fp:
-                code = compile(fp.read(), progname, 'exec')
+                code = compile(fp.read(), progname, "exec")
                 # try to emulate __main__ namespace as much as possible
                 globs = {
-                    '__file__': progname,
-                    '__name__': '__main__',
-                    '__package__': None,
-                    '__cached__': None,
+                    "__file__": progname,
+                    "__name__": "__main__",
+                    "__package__": None,
+                    "__cached__": None,
                 }
                 self.runctx(code, globs, globs)
         except IOError as err:
             logger.critical(
-                "Cannot add rai tracer to python file %r because: %s" % (sys.argv[0], err))
+                "Cannot add rai tracer to python file %r because: %s"
+                % (sys.argv[0], err)
+            )
             sys.exit(1)
         except SystemExit:
             pass
@@ -224,14 +236,14 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Add RAI Tracer ranges to python functions')
-    parser.add_argument('--depth', type=int,
-                        help='only push ranges to this stack depth')
-    parser.add_argument('--debug', action='store_true',
-                        help='print debug messages')
-    parser.add_argument('--verbose', action='store_true',
-                        help='print verbose messages')
-    parser.add_argument('commands', nargs='+', help='commands help')
+        description="Add RAI Tracer ranges to python functions"
+    )
+    parser.add_argument(
+        "--depth", type=int, help="only push ranges to this stack depth"
+    )
+    parser.add_argument("--debug", action="store_true", help="print debug messages")
+    parser.add_argument("--verbose", action="store_true", help="print verbose messages")
+    parser.add_argument("commands", nargs="+", help="commands help")
 
     args = parser.parse_args()
     if args.debug:
@@ -240,7 +252,7 @@ def main():
         logger.setLevel(logging.INFO)
     if args.depth:
         if args.depth < 0:
-            logger.critical('trace depth must be >=0')
+            logger.critical("trace depth must be >=0")
             sys.exit(1)
         else:
             DEPTH_LIMIT = args.depth
@@ -252,5 +264,5 @@ def main():
     t.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
