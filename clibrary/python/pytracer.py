@@ -17,14 +17,6 @@ DEPTH_LIMIT = None
 
 try:
     import threading
-except ImportError:
-    _settrace = sys.setprofile
-
-    def _unsettrace():
-        sys.setprofile(None)
-
-
-else:
 
     def _settrace(func):
         threading.setprofile(func)
@@ -33,6 +25,13 @@ else:
     def _unsettrace():
         sys.setprofile(None)
         threading.setprofile(None)
+
+
+except ImportError:
+    _settrace = sys.setprofile
+
+    def _unsettrace():
+        sys.setprofile(None)
 
 
 NO_TRACE = 0
