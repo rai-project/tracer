@@ -14,21 +14,9 @@ static const GoInt32 LIBRARY_TRACE = 4;
 static const GoInt32 HARDWARE_TRACE = 5;
 static const GoInt32 FULL_TRACE = 6;
 
-namespace detail {
-
-GoString to_go_string(const char *e) {
-  GoString res;
-  const std::string str = std::string(e);
-  res.p = strdup(str.c_str());
-  res.n = str.length();
-  return res;
-}
-} // namespace detail
-
 static void BM_CTracer(benchmark::State &state) {
   for (auto _ : state) {
-    auto iter_span =
-        SpanStart(APPLICATION_TRACE, detail::to_go_string("iteration"));
+    auto iter_span = SpanStart(APPLICATION_TRACE, "iteration");
     benchmark::DoNotOptimize(iter_span);
     SpanFinish(iter_span);
   }
@@ -37,14 +25,13 @@ static void BM_CTracer(benchmark::State &state) {
 BENCHMARK(BM_CTracer);
 
 static void BM_CTracerWithContext(benchmark::State &state) {
-  SpanStartFromContext_return spanctx =
-      SpanStartFromContext(ContextNewBackground(), APPLICATION_TRACE,
-                           detail::to_go_string("CTracerWithContext"));
+  SpanStartFromContext_return spanctx = SpanStartFromContext(
+      ContextNewBackground(), APPLICATION_TRACE, "CTracerWithContext");
   auto span = spanctx.r0;
   auto ctx = spanctx.r1;
   for (auto _ : state) {
-    SpanStartFromContext_return iter_spanctx = SpanStartFromContext(
-        ctx, APPLICATION_TRACE, detail::to_go_string("iteration_ctx"));
+    SpanStartFromContext_return iter_spanctx =
+        SpanStartFromContext(ctx, APPLICATION_TRACE, "iteration_ctx");
     auto iter_span = iter_spanctx.r0;
     auto iter_ctx = iter_spanctx.r1;
     // std::cout << "ctx = " << iter_ctx << "\n";
@@ -61,14 +48,13 @@ BENCHMARK(BM_CTracerWithContext);
 
 void test() {
 
-  SpanStartFromContext_return spanctx1 =
-      SpanStartFromContext(ContextNewBackground(), APPLICATION_TRACE,
-                           detail::to_go_string("CTracerWithContext"));
+  SpanStartFromContext_return spanctx1 = SpanStartFromContext(
+      ContextNewBackground(), APPLICATION_TRACE, "CTracerWithContext");
   auto span1 = spanctx1.r0;
   auto ctx1 = spanctx1.r1;
 
-  SpanStartFromContext_return spanctx2 = SpanStartFromContext(
-      ctx1, APPLICATION_TRACE, detail::to_go_string("iteration"));
+  SpanStartFromContext_return spanctx2 =
+      SpanStartFromContext(ctx1, APPLICATION_TRACE, "iteration");
   auto span2 = spanctx2.r0;
   auto ctx2 = spanctx2.r1;
 
