@@ -32,6 +32,15 @@ except ImportError:
         sys.setprofile(None)
 
 
+class SpanStartFromContext_return(ctypes.Structure):
+    _fields_ = [("span", ctypes.c_size_t), ("context", ctypes.c_size_t)]
+
+
+RAITRACER_PATHS = [
+    "librai_tracer.so",
+    os.environ["GOPATH"]
+    + "/src/github.com/rai-project/tracer/clibrary/dist/MacOSX-x86-64/librai_tracer.so",
+]
 NO_TRACE = 0
 APPLICATION_TRACE = 1
 MODEL_TRACE = 2
@@ -41,64 +50,12 @@ HARDWARE_TRACE = 5
 FULL_TRACE = 6
 
 
-def function_full_name(function, module=None):
-    name = []
-    if not module:
-        module = inspect.getmodule(function)
-    # print(inspect.getmembers(module))
-
-    if module:
-        name.append(module.__name__)
-
-    name.append(function.__name__)
-    return name
-
-
-def full_name(frame, module=None):
-    name = []
-    if not module:
-        module = inspect.getmodule(frame)
-
-    if module:
-        name.append(module.__name__)
-    if "self" in frame.f_locals:
-        # I don't know any way to detect call from the object method
-        # XXX: there seems to be no way to detect static method call - it will
-        #      be just a function call
-        try:
-            class_name = frame.f_locals["self"].__class__.__name__
-        except KeyError:
-            class_name = None
-        if class_name:
-            name.append(class_name)
-
-    file_name = frame.f_globals.get("__file__", None)
-    if file_name is not None:
-        full_file_name = os.path.abspath(file_name)
-    else:
-        full_file_name = "None"
-    name.append(full_file_name)
-    line_number = frame.f_lineno
-    name.append(str(line_number))
-
-    codename = frame.f_code.co_name
-    # if codename != '<module>':  # top level usually
-    #    name.append(codename)  # function or a method
-    name.append(codename)
-    return name
-
-
 class Tracer(object):
     def __init__(self, prog_argv):
         self.prog_argv = prog_argv
         self.libraitracer = None
-        self.libcudart = None
-        # load the rai tracer library
-        RAITRACER_PATHS = [
-            "librai_tracer.so",
-            os.environ["GOPATH"]
-            + "/src/github.com/rai-project/tracer/clibrary/dist/MacOSX-x86-64/librai_tracer.so",
-        ]
+        self.globalCtx = None
+        self.globalSpanCtx = None
         for path in RAITRACER_PATHS:
             try:
                 self.libraitracer = ctypes.cdll.LoadLibrary(path)
@@ -106,8 +63,23 @@ class Tracer(object):
                 logger.info("loaded RAI Tracer from {}".format(path))
                 self.libraitracer.SpanStart.restype = ctypes.c_size_t
                 self.libraitracer.SpanStart.argtypes = [ctypes.c_int, ctypes.c_char_p]
+                self.libraitracer.SpanStartFromContext.restype = (
+                    SpanStartFromContext_return
+                )
+                self.libraitracer.SpanStartFromContext.argtypes = [
+                    ctypes.c_size_t,
+                    ctypes.c_int,
+                    ctypes.c_char_p,
+                ]
+                self.libraitracer.SpanAddTag.restype = None
+                self.libraitracer.SpanAddTag.argtypes = [
+                    ctypes.c_size_t,
+                    ctypes.c_char_p,
+                    ctypes.c_char_p,
+                ]
                 self.libraitracer.SpanFinish.restype = None
                 self.libraitracer.SpanFinish.argtypes = [ctypes.c_size_t]
+
                 break
             except OSError as e:
                 logger.debug("failed to load RAI Tracer from {}".format(path))
@@ -116,21 +88,91 @@ class Tracer(object):
             logger.error("couldn't load any of {}".format(RAITRACER_PATHS))
 
     def __del__(self):
+        if self.globalSpanCtx is not None:
+            print("__del = ", self.globalSpanCtx.span)
+            self._spanFinish(span_id=self.globalSpanCtx.span)
         if self.libraitracer is not None:
             self.libraitracer.TracerClose()
 
     def _spanStart(self, operationName):
+        if self.globalSpanCtx is None:
+            self.globalSpanCtx = self._spanStartFromContext(0, self.prog_argv[0])
         if self.libraitracer is not None:
             logger.debug("spanstart {}".format(operationName))
-            self.spanID = self.libraitracer.SpanStart(
-                APPLICATION_TRACE, ctypes.c_char_p(str.encode(operationName))
+            # self.span_id = self.libraitracer.SpanStart(
+            #     APPLICATION_TRACE, ctypes.c_char_p(str.encode(operationName))
+            # )
+            # return self.libraitracer.SpanStartFromContext(
+            #     self.globalCtx,
+            #     APPLICATION_TRACE,
+            #     ctypes.c_char_p(str.encode(operationName)),
+            # )
+            res = self._spanStartFromContext(self.globalCtx, operationName)
+            return res.span
+
+    def _spanStartFromContext(self, ctx, operationName):
+        if self.libraitracer is not None:
+            logger.debug("spanstart {}".format(operationName))
+            res = self.libraitracer.SpanStartFromContext(
+                ctx, APPLICATION_TRACE, ctypes.c_char_p(str.encode(operationName))
+            )
+            if self.globalSpanCtx is None:
+                self.globalSpanCtx = res
+                self.globalCtx = self.globalSpanCtx.context
+            return res
+
+    def _spanFinish(self, span_id=None):
+        if self.libraitracer is not None:
+            if span_id is None:
+                span_id = self.span_id
+            logger.debug("spanfinish {}".format(span_id))
+            self.libraitracer.SpanFinish(span_id)
+
+    def _addTag(self, span_id, key, val):
+        if self.libraitracer is not None:
+            print(span_id)
+            # print(val)
+            self.libraitracer.SpanAddTag(
+                span_id,
+                ctypes.c_char_p(str.encode(str(key))),
+                ctypes.c_char_p(str.encode(str(val))),
             )
 
-    def _spanFinish(self, operationName):
-        if self.libraitracer is not None:
-            logger.debug("spansfinish {}".format(operationName))
-            print(self.spanID)
-            self.libraitracer.SpanFinish(self.spanID)
+    def _add_function_full_name(self, span_id, function, module=None):
+        if not module:
+            module = inspect.getmodule(function)
+
+        if module:
+            self._addTag(span_id, "module", module.__name__)
+        self._addTag(span_id, "function", function.__name__)
+
+    def _add_full_name(self, span_id, frame, module=None):
+        if not module:
+            module = inspect.getmodule(frame)
+
+        if module:
+            self._addTag(span_id, "module", module.__name__)
+            self._addTag(span_id, "module_path", module.__file__)
+
+        try:
+            class_name = frame.f_locals["self"].__class__.__name__
+            self._addTag(span_id, "class", class_name)
+        except KeyError:
+            pass
+
+        file_name = frame.f_globals.get("__file__", None)
+        if file_name is not None:
+            full_file_name = os.path.abspath(file_name)
+            self._addTag(span_id, "full_file_name", full_file_name)
+
+        line_number = frame.f_lineno
+        self._addTag(span_id, "line_number", str(line_number))
+
+        codename = frame.f_code.co_name
+        # if codename != '<module>':  # top level usually
+        #    name.append(codename)  # function or a method
+        self._addTag(span_id, "code_name", str(codename))
+        return name
 
     def tracefunc(self, frame, event, arg, ranges=[[]], mode=[None]):
 
@@ -175,23 +217,21 @@ class Tracer(object):
             # if module is None:
             #     return tracefunc
 
-            if event == "call":
-                name = []
-                # name += [str(frame.f_code.co_filename)]
-                name += full_name(frame, module=module)
-            else:
-                name = function_full_name(arg, module=module)
-            # filename, lineno, function_name, code_context, index = inspect.getframeinfo(frame)
-            range_name = ".".join(name)
+            span_id = self._spanStart(frame.f_code.co_name)
+            # if event == "call":
+            #     self._add_full_name(span_id, frame, module=module)
+            # else:
+            #     self._add_function_full_name(span_id, arg, module=module)
+            self._addTag(span_id, "frame", frame)
+            self.span_id = span_id
             ranges[0].append(frame)
-            self._spanStart(range_name)
         elif event == "return" or event == "c_return":
             # don't record exit of _settrace (won't see call)
             # if frame.f_code.co_name == "_settrace":
             #     return tracefunc
             if ranges[0]:
                 if ranges[0][-1] == frame:
-                    self._spanFinish(".".join(full_name(frame)))
+                    self._spanFinish(span_id=self.span_id)
                     ranges[0] = ranges[0][:-1]
                     # name = full_name(frame)
 
