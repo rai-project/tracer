@@ -5,17 +5,19 @@ GOFILES_BUILD             := $(shell find . -type f -name '*.go' -not -name '*_t
 RAI_TRACER_LIB_VERSION    ?= $(shell cat VERSION)
 RAI_TRACER_LIB_OUTPUT     ?= rai_tracer
 RAI_TRACER_LIB_REVISION   := $(shell cat COMMIT 2>/dev/null || git rev-parse --short=8 HEAD)
-RAI_TRACER_LIB_SUFFIX     := so
+RAI_TRACER_STATIC_LIB_SUFFIX := a
+RAI_TRACER_SHARED_LIB_SUFFIX := so
 # Support reproducible builds by embedding date according to SOURCE_DATE_EPOCH if present
 DATE                      := $(shell date -u -d "@$(SOURCE_DATE_EPOCH)" '+%FT%T%z' 2>/dev/null || date -u '+%FT%T%z')
 # BUILDFLAGS                := -buildmode=c-archive -ldflags '-linkmode external -w -extldflags "-v -static"' -gcflags="-B"
-BUILDFLAGS                := -x -buildmode=c-shared -ldflags '-linkmode external -compressdwarf=true -s -w -extldflags "-v -static"' -gcflags="-B"
+BUILDSTATICFLAGS          := -x -buildmode=c-shared -ldflags '-linkmode external -compressdwarf=true -s -w -extldflags "-v -static"' -gcflags="-B"
+BUILDSHAREDFLAGS          := -x -buildmode=c-archive -ldflags '-linkmode external -compressdwarf=true -s -w -extldflags "-v -static"' -gcflags="-B"
 TESTFLAGS                 ?=
 PWD                       := $(shell pwd)
 PREFIX                    ?= $(GOPATH)
 BINDIR                    ?= $(PREFIX)/bin
 GO                        := go
-CGO_LDFLAGS               := CGO_LDFLAGS="-O3 -w"
+CGO_LDFLAGS               := CGO_LDFLAGS="-O3 -g -w"
 GOOS                      ?= $(shell go version | cut -d' ' -f4 | cut -d'/' -f1)
 GOARCH                    ?= $(shell go version | cut -d' ' -f4 | cut -d'/' -f2)
 
@@ -29,7 +31,8 @@ sysinfo:
 	@printf '%s\n' '$(OK)'
 	@echo -n "     GO      : $(shell go version)"
 	@printf '%s\n' '$(OK)'
-	@echo -n "     BUILDFLAGS: $(BUILDFLAGS)"
+	@echo -n "     BUILDSTATICFLAGS: $(BUILDSTATICFLAGS)"
+	@echo -n "     BUILDSHAREDFLAGS: $(BUILDSHAREDFLAGS)"
 	@printf '%s\n' '$(OK)'
 	@echo -n "     GIT     : $(shell git version)"
 	@printf '%s\n' '$(OK)'
@@ -50,8 +53,13 @@ setup:
 	mkdir -p dist/Windows-x86-64/
 
 $(RAI_TRACER_LIB_OUTPUT)-macosx: $(GOFILES_NOVENDOR)
-	@echo -n ">> CROSSCOMPILE darwin GOOS=darwin GOARCH=amd64 $(CGO_LDFLAGS) $(GO) build -v -o dist/MacOSX-x86-64/lib$(RAI_TRACER_LIB_OUTPUT).$(RAI_TRACER_LIB_SUFFIX) $(BUILDFLAGS) $^"
-	@GOOS=darwin GOARCH=amd64 $(CGO_LDFLAGS) $(GO) build -o dist/MacOSX-x86-64/lib$(RAI_TRACER_LIB_OUTPUT).$(RAI_TRACER_LIB_SUFFIX) $(BUILDFLAGS) $^
+	@echo -n ">> CROSSCOMPILE darwin GOOS=darwin GOARCH=amd64 $(CGO_LDFLAGS) $(GO) build -v -o dist/MacOSX-x86-64/lib$(RAI_TRACER_LIB_OUTPUT).$(RAI_TRACER_STATIC_LIB_SUFFIX) $(BUILDSTATICFLAGS) $^"
+	@GOOS=darwin GOARCH=amd64 $(CGO_LDFLAGS) $(GO) build -o dist/MacOSX-x86-64/lib$(RAI_TRACER_LIB_OUTPUT).$(RAI_TRACER_STATIC_LIB_SUFFIX) $(BUILDSTATICFLAGS) $^
+	@printf '%s\n' '$(OK)'
+
+$(RAI_TRACER_LIB_OUTPUT)-shared-macosx: $(GOFILES_NOVENDOR)
+	@echo -n ">> CROSSCOMPILE darwin GOOS=darwin GOARCH=amd64 $(CGO_LDFLAGS) $(GO) build -v -o dist/MacOSX-x86-64/lib$(RAI_TRACER_LIB_OUTPUT).$(RAI_TRACER_SHARED_LIB_SUFFIX) $(BUILDSHAREDFLAGS) $^"
+	@GOOS=darwin GOARCH=amd64 $(CGO_LDFLAGS) $(GO) build -o dist/MacOSX-x86-64/lib$(RAI_TRACER_LIB_OUTPUT).$(RAI_TRACER_SHARED_LIB_SUFFIX) $(BUILDSHAREDFLAGS) $^
 	@printf '%s\n' '$(OK)'
 
 $(RAI_TRACER_LIB_OUTPUT)-linux: $(GOFILES_NOVENDOR)

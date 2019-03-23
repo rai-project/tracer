@@ -6,6 +6,7 @@ import (
 
 import (
 	"context"
+	"sync"
 	"unsafe"
 
 	"github.com/opentracing/opentracing-go"
@@ -14,6 +15,8 @@ import (
 	// _ "github.com/rai-project/tracer/noop"
 	// _ "github.com/rai-project/tracer/zipkin"
 )
+
+var spans sync.Map
 
 //go:nosplit
 func fromSpan(sp opentracing.Span) uintptr {
@@ -37,9 +40,10 @@ func toContext(ctx uintptr) context.Context {
 
 //export SpanStart
 func SpanStart(lvl int32, operationName string) uintptr {
-	// sp := tracer.StartSpan(tracer.Level(lvl), operationName, opentracing.Tags(tags))
-	// return (uintptr)(unsafe.Pointer(&sp))
-	return fromSpan(tracer.StartSpan(tracer.Level(lvl), operationName))
+	sp := tracer.StartSpan(tracer.Level(lvl), operationName)
+	spanPtr := fromSpan(sp)
+	spans.Store(spanPtr, sp)
+	return spanPtr
 }
 
 //export SpanAddTag
@@ -68,8 +72,15 @@ func SpanAddArgumentsTag(spPtr uintptr, len int, keys []string, vals []string) {
 
 //export SpanFinish
 func SpanFinish(spPtr uintptr) {
-	sp := toSpan(spPtr)
+	var sp opentracing.Span
+	if e, ok := spans.Load(spPtr); ok {
+		sp = e.(opentracing.Span)
+	}
+	if sp == nil {
+		return
+	}
 	sp.Finish()
+	spans.Delete(spPtr)
 }
 
 //export StartSpanFromContext

@@ -22,8 +22,8 @@ var (
 	log       *logrus.Entry = logrus.New().WithField("pkg", "tracer/clibrary")
 )
 
-// Init reads in config file and ENV variables if set.
-func init() {
+//export TracerInit
+func TracerInit() {
 
 	log.Level = logrus.DebugLevel
 	config.AfterInit(func() {
