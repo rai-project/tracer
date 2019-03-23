@@ -172,7 +172,7 @@ class Tracer(object):
         # if codename != '<module>':  # top level usually
         #    name.append(codename)  # function or a method
         self._addTag(span_id, "code_name", str(codename))
-        return name
+        return
 
     def tracefunc(self, frame, event, arg, ranges=[[]], mode=[None]):
 
@@ -218,11 +218,11 @@ class Tracer(object):
             #     return tracefunc
 
             span_id = self._spanStart(frame.f_code.co_name)
-            # if event == "call":
-            #     self._add_full_name(span_id, frame, module=module)
-            # else:
-            #     self._add_function_full_name(span_id, arg, module=module)
-            self._addTag(span_id, "frame", frame)
+            if event == "call":
+                self._add_full_name(span_id, frame, module=module)
+            else:
+                self._add_function_full_name(span_id, arg, module=module)
+            # self._addTag(span_id, "frame", frame)
             self.span_id = span_id
             ranges[0].append(frame)
         elif event == "return" or event == "c_return":
