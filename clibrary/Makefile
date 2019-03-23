@@ -17,7 +17,7 @@ PWD                       := $(shell pwd)
 PREFIX                    ?= $(GOPATH)
 BINDIR                    ?= $(PREFIX)/bin
 GO                        := go
-CGO_LDFLAGS               := CGO_LDFLAGS="-O3 -g -w"
+CGO_LDFLAGS               := CGO_LDFLAGS="-O3 -w"
 GOOS                      ?= $(shell go version | cut -d' ' -f4 | cut -d'/' -f1)
 GOARCH                    ?= $(shell go version | cut -d' ' -f4 | cut -d'/' -f2)
 
