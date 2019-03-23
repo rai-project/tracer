@@ -1,10 +1,13 @@
 package main
 
+// #include <stdlib.h>
+// #include <stdlib.h>
 import (
 	"C"
 )
 
 import (
+	"unsafe"
 	"context"
 	"math"
 	"sync"
@@ -91,37 +94,43 @@ func (s contextMap) Delete(id uintptr) {
 }
 
 //export SpanStart
-func SpanStart(lvl int32, operationName string) uintptr {
+func SpanStart(lvl C.int32_t, cOperationName *C.char) uintptr {
+  operationName := C.GoString(cOperationName)
 	sp := tracer.StartSpan(tracer.Level(lvl), operationName)
 	return spans.Add(sp)
 }
 
 //export SpanStartFromContext
-func SpanStartFromContext(inCtx uintptr, lvl int32, operationName string) (uintptr, uintptr) {
+func SpanStartFromContext(inCtx uintptr, lvl int32, cOperationName *C.char) (uintptr, uintptr) {
+  operationName := C.GoString(cOperationName)
 	sp, ctx := tracer.StartSpanFromContext(contexts.Get(inCtx), tracer.Level(lvl), operationName)
 	return spans.Add(sp), contexts.Add(ctx)
 }
 
 //export SpanAddTag
-func SpanAddTag(spPtr uintptr, key, val string) {
+func SpanAddTag(spPtr uintptr, key *C.char, val *C.char) {
 	sp := spans.Get(spPtr)
-	sp.SetTag(key, val)
+	sp.SetTag(C.GoString(key), C.GoString(val))
 }
 
 //export SpanAddTags
-func SpanAddTags(spPtr uintptr, len int, keys []string, vals []string) {
-	sp := spans.Get(spPtr)
-	for ii := 0; ii < len; ii++ {
-		sp.SetTag(keys[ii], vals[ii])
+func SpanAddTags(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
+  sp := spans.Get(spPtr)
+  keys := (*[1 << 28]*C.char)(unsafe.Pointer(ckeys))[:length:length]
+  vals := (*[1 << 28]*C.char)(unsafe.Pointer(cvals))[:length:length]
+	for ii := 0; ii < length; ii++ {
+		sp.SetTag(C.GoString(keys[ii]), C.GoString(vals[ii]))
 	}
 }
 
 //export SpanAddArgumentsTag
-func SpanAddArgumentsTag(spPtr uintptr, len int, keys []string, vals []string) {
+func SpanAddArgumentsTag(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
 	sp := spans.Get(spPtr)
-	args := make(map[string]string, len)
-	for ii := 0; ii < len; ii++ {
-		args[keys[ii]] = vals[ii]
+  keys := (*[1 << 28]*C.char)(unsafe.Pointer(ckeys))[:length:length]
+  vals := (*[1 << 28]*C.char)(unsafe.Pointer(cvals))[:length:length]
+	args := make(map[string]string, length)
+	for ii := 0; ii < length; ii++ {
+		args[C.GoString(keys[ii])] = C.GoString(vals[ii])
 	}
 	sp.SetTag("arguments", args)
 }

@@ -12,8 +12,6 @@ logging.basicConfig()
 logger = logging.getLogger("pytracer")
 logger.setLevel(logging.DEBUG)
 
-DEPTH_LIMIT = None
-
 
 try:
     import threading
@@ -60,7 +58,6 @@ def full_name(frame, module=None):
     name = []
     if not module:
         module = inspect.getmodule(frame)
-    # print(inspect.getmembers(module))
 
     if module:
         name.append(module.__name__)
@@ -74,6 +71,16 @@ def full_name(frame, module=None):
             class_name = None
         if class_name:
             name.append(class_name)
+
+    file_name = frame.f_globals.get("__file__", None)
+    if file_name is not None:
+        full_file_name = os.path.abspath(file_name)
+    else:
+        full_file_name = "None"
+    name.append(full_file_name)
+    line_number = frame.f_lineno
+    name.append(str(line_number))
+
     codename = frame.f_code.co_name
     # if codename != '<module>':  # top level usually
     #    name.append(codename)  # function or a method
@@ -82,9 +89,8 @@ def full_name(frame, module=None):
 
 
 class Tracer(object):
-    def __init__(self, prog_argv, depth_limit=None):
+    def __init__(self, prog_argv):
         self.prog_argv = prog_argv
-        self.depth_limit = depth_limit
         self.libraitracer = None
         self.libcudart = None
         # load the rai tracer library
@@ -116,7 +122,9 @@ class Tracer(object):
     def _spanFinish(self, operationName):
         if self.libraitracer:
             logger.debug("spansfinish {}".format(operationName))
-            # self.libraitracer.SpanFinish(ctypes.c_void_p(p0))
+            self.libraitracer.SpanFinish(
+                APPLICATION_TRACE, ctypes.c_char_p(str.encode(operationName))
+            )
 
     def tracefunc(self, frame, event, arg, ranges=[[]], mode=[None]):
 
@@ -129,10 +137,6 @@ class Tracer(object):
             return self.tracefunc
 
         if event == "call" or event == "c_call":
-            if self.depth_limit:
-                if len(ranges[0]) > self.depth_limit:
-                    return self.tracefunc
-
             if event == "call":
                 # don't record call of _unsettrace (won't see exit)
                 function_name = frame.f_code.co_name
@@ -158,8 +162,8 @@ class Tracer(object):
                 mode[0] = frame
                 return self.tracefunc
 
-            # if function_name == "<module>":
-            #     return tracefunc
+            if function_name == "<module>":
+                return self.tracefunc
 
             # we may have defined the functions that are not part of a module, so we don't want to skip
             # if module is None:
@@ -249,16 +253,10 @@ def main():
         logger.setLevel(logging.DEBUG)
     if args.verbose:
         logger.setLevel(logging.INFO)
-    if args.depth:
-        if args.depth < 0:
-            logger.critical("trace depth must be >=0")
-            sys.exit(1)
-        else:
-            DEPTH_LIMIT = args.depth
 
     prog_argv = args.commands
 
-    t = Tracer(prog_argv, depth_limit=args.depth)
+    t = Tracer(prog_argv)
 
     t.run()
 
