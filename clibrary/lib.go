@@ -96,7 +96,7 @@ func (s contextMap) Delete(id uintptr) {
 //export SpanStart
 func SpanStart(lvl C.int32_t, cOperationName *C.char) uintptr {
   operationName := C.GoString(cOperationName)
-	sp := tracer.StartSpan(tracer.Level(lvl), operationName)
+  sp := tracer.StartSpan(tracer.Level(lvl), operationName)
 	return spans.Add(sp)
 }
 

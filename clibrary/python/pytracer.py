@@ -104,6 +104,10 @@ class Tracer(object):
                 self.libraitracer = ctypes.cdll.LoadLibrary(path)
                 self.libraitracer.TracerInit()
                 logger.info("loaded RAI Tracer from {}".format(path))
+                self.libraitracer.SpanStart.restype = ctypes.c_size_t
+                self.libraitracer.SpanStart.argtypes = [ctypes.c_int, ctypes.c_char_p]
+                self.libraitracer.SpanFinish.restype = None
+                self.libraitracer.SpanFinish.argtypes = [ctypes.c_size_t]
                 break
             except OSError as e:
                 logger.debug("failed to load RAI Tracer from {}".format(path))
@@ -119,15 +123,14 @@ class Tracer(object):
         if self.libraitracer is not None:
             logger.debug("spanstart {}".format(operationName))
             self.spanID = self.libraitracer.SpanStart(
-                ctypes.c_int(APPLICATION_TRACE),
-                ctypes.c_char_p(str.encode(operationName)),
+                APPLICATION_TRACE, ctypes.c_char_p(str.encode(operationName))
             )
-            print(self.spanID)
 
     def _spanFinish(self, operationName):
         if self.libraitracer is not None:
             logger.debug("spansfinish {}".format(operationName))
-            self.libraitracer.SpanFinish(ctypes.c_void_p(self.spanID))
+            print(self.spanID)
+            self.libraitracer.SpanFinish(self.spanID)
 
     def tracefunc(self, frame, event, arg, ranges=[[]], mode=[None]):
 
