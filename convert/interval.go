@@ -37,11 +37,3 @@ func (i Iterval) OverlapsAtDimension(iv augmentedtree.Interval, dimension uint64
 func spanToInterval(s model.Span) augmentedtree.Interval {
 	return Iterval{s}
 }
-
-func NewSpanTree(spans []model.Span) augmentedtree.Tree {
-	tree := augmentedtree.New(1)
-	for _, s := range spans {
-		tree.Add(spanToInterval(s))
-	}
-	return tree
-}
