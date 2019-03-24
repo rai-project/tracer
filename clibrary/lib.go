@@ -7,6 +7,7 @@ import (
 )
 
 import (
+	"strconv"
 	"unsafe"
 	"context"
 	"math"
@@ -14,7 +15,8 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/rai-project/tracer"
-	_ "github.com/rai-project/tracer/jaeger"
+ _	"github.com/rai-project/tracer/jaeger"
+ jaeger "github.com/uber/jaeger-client-go"
 	"gitlab.com/NebulousLabs/fastrand"
 	// _ "github.com/rai-project/tracer/noop"
 	// _ "github.com/rai-project/tracer/zipkin"
@@ -143,6 +145,15 @@ func SpanFinish(spPtr uintptr) {
 	}
 	spans.Delete(spPtr)
 }
+
+//export SpanGetTraceID
+func SpanGetTraceID(spPtr uintptr) *C.char {
+	sp := spans.Get(spPtr)
+  traceID := sp.Context().(jaeger.SpanContext).TraceID()
+  return C.CString(strconv.FormatUint(traceID.Low, 16))
+}
+
+
 
 //export ContextNewBackground
 func ContextNewBackground() uintptr {
