@@ -7,7 +7,7 @@ import (
 	model "github.com/uber/jaeger/model/json"
 )
 
-type Iterval struct {
+type Interval struct {
 	model.Span
 }
 
@@ -17,23 +17,23 @@ func hash(s string) uint64 {
 	return h.Sum64()
 }
 
-func (i Iterval) LowAtDimension(uint64) int64 {
+func (i Interval) LowAtDimension(uint64) int64 {
 	return int64(i.StartTime)
 }
 
-func (i Iterval) HighAtDimension(uint64) int64 {
+func (i Interval) HighAtDimension(uint64) int64 {
 	return int64(i.StartTime + i.Duration)
 }
 
-func (i Iterval) ID() uint64 {
+func (i Interval) ID() uint64 {
 	return hash(string(i.SpanID))
 }
 
-func (i Iterval) OverlapsAtDimension(iv augmentedtree.Interval, dimension uint64) bool {
+func (i Interval) OverlapsAtDimension(iv augmentedtree.Interval, dimension uint64) bool {
 	return i.HighAtDimension(dimension) > iv.LowAtDimension(dimension) &&
 		i.LowAtDimension(dimension) < iv.HighAtDimension(dimension)
 }
 
-func spanToInterval(s model.Span) augmentedtree.Interval {
-	return Iterval{s}
+func spanToInterval(s model.Span) Interval {
+	return Interval{s}
 }
