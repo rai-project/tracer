@@ -34,7 +34,6 @@ static void BM_CTracerWithContext(benchmark::State &state) {
         SpanStartFromContext(ctx, APPLICATION_TRACE, (char *)"iteration_ctx");
     auto iter_span = iter_spanctx.r0;
     auto iter_ctx = iter_spanctx.r1;
-    // std::cout << "ctx = " << iter_ctx << "\n";
     benchmark::DoNotOptimize(iter_span);
     benchmark::DoNotOptimize(iter_ctx);
     SpanFinish(iter_span);
