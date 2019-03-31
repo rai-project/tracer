@@ -19,6 +19,10 @@ func hash(s string) uint64 {
 	return res
 }
 
+func (i Interval) IsNil() bool {
+	return i.Span == nil
+}
+
 func (i Interval) Start() uint64 {
 	if i.Span == nil {
 		return 0
