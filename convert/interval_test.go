@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/GeertJohan/go-sourcepath"
-	"github.com/k0kubun/pp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,20 +19,25 @@ func TestNewIntervalTree(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tree)
 
+	if !assert.Equal(t, int(tree.Len()), len(tree.trace.Spans)) {
+		t.FailNow()
+	}
+
 	sp := tree.GetIntervalsByOperationName("Dropout")
 	assert.NotEmpty(t, sp)
 
 	firstDropoutSpan := sp[0]
 
 	children := tree.ChildrenOf(firstDropoutSpan)
+	assert.NotEmpty(t, children)
 	for _, c := range children {
-		pp.Printf("children = %v\n", c.SpanID)
+		assert.NotEmpty(t, c)
 	}
 
 	intervals := tree.GetIntervals()
 	for _, interval := range intervals {
 		if firstDropoutSpan.Contains(interval) {
-			pp.Printf("e children = %v\n", interval.OperationName)
+			assert.NotEmpty(t, interval)
 		}
 	}
 
@@ -41,11 +45,20 @@ func TestNewIntervalTree(t *testing.T) {
 	for _, span := range spans {
 		if firstDropoutSpan.StartTime <= span.StartTime &&
 			(span.StartTime+span.Duration) <= (firstDropoutSpan.StartTime+firstDropoutSpan.Duration) {
-			pp.Printf("manual children = %v\n", span.OperationName)
+			assert.NotEmpty(t, span)
 		}
 	}
 
-	pp.Println(firstDropoutSpan.OperationName)
+	firstDropoutChild := tree.ChildrenOf(firstDropoutSpan)[0]
+	parents := tree.ParentsOf(firstDropoutChild)
+	assert.NotEmpty(t, parents)
+	for _, p := range parents {
+		assert.NotEmpty(t, p)
+	}
+
+	firstDropoutChildParent := tree.ParentOf(firstDropoutChild)
+	assert.NotEmpty(t, firstDropoutChildParent)
+	// pp.Println(firstDropoutChildParent.OperationName)
 
 	// pp.Println(int64(firstDropoutSpan.Start()))
 	// pp.Println(int64(firstDropoutSpan.Duration))
