@@ -15,7 +15,7 @@ func (t *IntervalTree) FilterOnlyChildrenOf(operationName string) error {
 			break
 		}
 	}
-	if rootParent.Span == nil {
+	if rootParent.IsNil() {
 		return errors.New("unable to find root node")
 	}
 	children := t.ChildrenOf(rootParent)

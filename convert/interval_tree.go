@@ -7,7 +7,6 @@ import (
 
 	"github.com/Unknwon/com"
 	"github.com/Workiva/go-datastructures/augmentedtree"
-	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
 	"github.com/rai-project/evaluation"
 	model "github.com/uber/jaeger/model/json"
@@ -58,11 +57,6 @@ func (t IntervalTree) ID() string {
 
 func (t IntervalTree) ImmediateChildrenOf(sp Interval) []Interval {
 	children := t.ChildrenOf(sp)
-	if sp.OperationName == "Flatten" {
-		for _, c := range children {
-			pp.Println("fl = ", c.OperationName)
-		}
-	}
 	immediateChildren := []Interval{}
 	for _, child := range children {
 		parent := t.ParentOf(child)
