@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rai-project/evaluation"
 	model "github.com/uber/jaeger/model/json"
+	"github.com/ulule/deepcopier"
 )
 
 type IntervalTree struct {
@@ -62,7 +63,7 @@ func (t IntervalTree) ChildrenOf(sp Interval) []Interval {
 		if !ok {
 			continue
 		}
-		if e.ID() != sp.ID() {
+		if e.ID() == sp.ID() {
 			continue
 		}
 		if sp.Contains(e) {
@@ -70,6 +71,11 @@ func (t IntervalTree) ChildrenOf(sp Interval) []Interval {
 		}
 	}
 	return res
+}
+
+func (t IntervalTree) DepthOf(sp Interval) int {
+	elems := t.Query(sp)
+	return len(elems)
 }
 
 func (t IntervalTree) ParentsOf(sp Interval) []Interval {
@@ -80,7 +86,7 @@ func (t IntervalTree) ParentsOf(sp Interval) []Interval {
 		if !ok {
 			continue
 		}
-		if e.ID() != sp.ID() {
+		if e.ID() == sp.ID() {
 			continue
 		}
 		res = append(res, e)
@@ -89,38 +95,39 @@ func (t IntervalTree) ParentsOf(sp Interval) []Interval {
 }
 
 func (t IntervalTree) ParentOf(sp Interval) Interval {
-	elems := t.Query(sp)
+	elems := t.ParentsOf(sp)
 	if len(elems) == 0 {
 		return Interval{}
 	}
 	if len(elems) == 1 {
-		return elems[0].(Interval)
+		return elems[0]
 	}
 	sort.Slice(elems, func(ii, jj int) bool {
-		return elems[ii].LowAtDimension(0) < elems[jj].LowAtDimension(0)
+		return elems[ii].LowAtDimension(0) > elems[jj].LowAtDimension(0)
 	})
-	return elems[0].(Interval)
+	return elems[0]
+}
+
+func (t IntervalTree) GetIntervals() []Interval {
+	length := t.Len()
+	intervals := make([]Interval, length)
+	ii := 0
+	t.Traverse(func(interval augmentedtree.Interval) {
+		intervals[ii] = interval.(Interval)
+		ii++
+	})
+	return intervals
 }
 
 // func (t IntervalTree) GetIntervals() []Interval {
-// 	length := t.Len()
+// 	spans := t.trace.Spans
+// 	length := len(spans)
 // 	intervals := make([]Interval, length)
-// 	ii := 0
-// 	t.Traverse(func(interval augmentedtree.Interval) {
-// 		intervals[ii] = interval.(Interval)
-// 	})
+// 	for ii, spans := range t.trace.Spans {
+// 		intervals[ii] = spanToInterval(spans)
+// 	}
 // 	return intervals
 // }
-
-func (t IntervalTree) GetIntervals() []Interval {
-	spans := t.trace.Spans
-	length := len(spans)
-	intervals := make([]Interval, length)
-	for ii, spans := range t.trace.Spans {
-		intervals[ii] = spanToInterval(spans)
-	}
-	return intervals
-}
 
 func (t IntervalTree) GetIntervalByIdx(idx int) Interval {
 	return spanToInterval(t.trace.Spans[idx])
@@ -134,4 +141,62 @@ func (t IntervalTree) GetIntervalsByOperationName(name string) []Interval {
 		}
 	}
 	return res
+}
+
+func (t IntervalTree) FixParentRelationship() (model.Trace, error) {
+	length := t.Len()
+	newTrace := model.Trace{}
+	err := deepcopier.Copy(t.trace).To(&newTrace)
+	if err != nil {
+		return model.Trace{}, nil
+	}
+	newSpans := make([]model.Span, length)
+	ii := 0
+	t.Traverse(func(iv0 augmentedtree.Interval) {
+		interval, ok := iv0.(Interval)
+		if !ok {
+			return
+		}
+		parent := t.ParentOf(interval)
+		if parent.Span == nil { // no parent
+			return
+		}
+		newSpan := model.Span{}
+		err := deepcopier.Copy(*interval.Span).To(&newSpan)
+		if err != nil {
+			return
+		}
+		newSpan.ParentSpanID = parent.SpanID
+		newSpans[ii] = newSpan
+		ii++
+	})
+	newTrace.Spans = newSpans
+	return newTrace, nil
+}
+
+func (t IntervalTree) FilterByDepth(depth int) (model.Trace, error) {
+	newTrace := model.Trace{}
+	err := deepcopier.Copy(t.trace).To(&newTrace)
+	if err != nil {
+		return model.Trace{}, nil
+	}
+	newSpans := []model.Span{}
+	t.Traverse(func(iv0 augmentedtree.Interval) {
+		interval, ok := iv0.(Interval)
+		if !ok {
+			return
+		}
+		parents := t.ParentsOf(interval)
+		if len(parents) > depth {
+			return
+		}
+		newSpan := model.Span{}
+		err := deepcopier.Copy(*interval.Span).To(&newSpan)
+		if err != nil {
+			return
+		}
+		newSpans = append(newSpans, newSpan)
+	})
+	newTrace.Spans = newSpans
+	return newTrace, nil
 }

@@ -99,3 +99,7 @@ func (ci Interval) OverlapsAtDimension(iv0 augmentedtree.Interval, dim uint64) b
 func spanToInterval(s model.Span) Interval {
 	return Interval{&s}
 }
+
+func ToInterval(s model.Span) Interval {
+	return spanToInterval(s)
+}

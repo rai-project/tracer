@@ -1,4 +1,4 @@
-package convert
+package chrome
 
 // Mapping from more reasonable color names to the reserved color names in
 // https://github.com/catapult-project/catapult/blob/master/tracing/tracing/base/color_scheme.html#L50
@@ -67,4 +67,9 @@ var colorForTask = []string{
 func pickTaskColor(id uint64) string {
 	idx := id % uint64(len(colorForTask))
 	return colorForTask[idx]
+}
+
+func colorName(cat string) string {
+	id := hash64(cat)
+	return pickTaskColor(id)
 }

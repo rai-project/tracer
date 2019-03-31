@@ -1,4 +1,4 @@
-package convert
+package chrome
 
 // See https://github.com/catapult-project/catapult/blob/master/tracing/docs/embedding-trace-viewer.md
 // This is almost verbatim copy of:
@@ -115,3 +115,19 @@ var templTrace = `
 </body>
 </html>
 `
+
+// // httpTrace serves either whole trace (goid==0) or trace for goid goroutine.
+// func ToHTML(w http.ResponseWriter, r *http.Request) {
+// 	_, err := parseTrace()
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+// 	if err := r.ParseForm(); err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+// 	html := strings.ReplaceAll(templTrace, "{{PARAMS}}", r.Form.Encode())
+// 	w.Write([]byte(html))
+
+// }
