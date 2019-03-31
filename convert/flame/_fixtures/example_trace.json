@@ -4,8 +4,8 @@
     "value": 1000,
     "children": [
       {
-        "name": "stream_synchronize",
-        "value": 0,
+        "name": "SyncCopyCPU2GPU",
+        "value": 1,
         "children": []
       }
     ]
