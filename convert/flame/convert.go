@@ -3,6 +3,7 @@ package flame
 import (
 	"encoding/json"
 
+	"github.com/k0kubun/pp"
 	"github.com/rai-project/tracer/convert"
 	model "github.com/uber/jaeger/model/json"
 )
@@ -13,7 +14,6 @@ type convertState struct {
 	profile      *Profile
 	root         convert.Interval
 	nodes        map[string]*Node
-	childNodes   map[string][]*Node
 	visitedNodes map[string]bool
 }
 
@@ -31,10 +31,14 @@ func Convert(tr model.Trace) (*Profile, error) {
 		return nil, err
 	}
 
-	nd := st.convertSpans(st.root)
-	st.fixChildren()
+	st.convertSpans(st.root)
 
-	st.profile.RootNode = *nd
+	for _, nd := range st.nodes {
+		println(nd.ID, " ", st.nodes[string(nd.Interval.ParentSpanID)].ID)
+	}
+
+	st.profile.RootNode = *st.nodes[string(st.root.SpanID)]
+	pp.Println(len(st.nodes))
 
 	return st.profile, nil
 }
@@ -48,12 +52,23 @@ func newConvertState(tr model.Trace) (*convertState, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	jaegerTrace, err := tree.FixParentRelationship()
+	if err != nil {
+		return nil, err
+	}
+
+	tree, err = convert.NewIntervalTree(jaegerTrace)
+	if err != nil {
+		return nil, err
+	}
+
 	err = tree.FilterOnlyChildrenOf("PredictImage")
 	if err != nil {
 		return nil, err
 	}
 
-	jaegerTrace, err := tree.FixParentRelationship()
+	jaegerTrace, err = tree.FixParentRelationship()
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +85,6 @@ func newConvertState(tr model.Trace) (*convertState, error) {
 		jaegerTrace:  jaegerTrace,
 		profile:      profile,
 		nodes:        map[string]*Node{},
-		childNodes:   map[string][]*Node{},
 		visitedNodes: map[string]bool{},
 	}, nil
 }
@@ -84,6 +98,7 @@ func (st *convertState) getValue(sp convert.Interval) int {
 func (st *convertState) convertSpans(root convert.Interval) *Node {
 	nd := st.convertSpan(root)
 	for _, interval := range st.tree.GetIntervals() {
+		// pp.Println(interval.OperationName, st.visitedNodes[string(interval.SpanID)])
 		st.convertSpan(interval)
 	}
 
@@ -98,63 +113,30 @@ func (st *convertState) convertSpan(root convert.Interval) *Node {
 	}
 
 	nd := &Node{
-		ID:    rootID,
-		Name:  root.OperationName,
-		Value: st.getValue(root),
+		ID:       rootID,
+		Name:     root.OperationName,
+		Value:    st.getValue(root),
+		Interval: &root,
+		Children: map[string]*Node{},
 	}
-
-	st.visitedNodes[rootID] = true
 
 	parentID := string(root.ParentSpanID)
-	if _, ok := st.childNodes[parentID]; !ok {
-		st.childNodes[parentID] = []*Node{}
-	}
-	st.childNodes[parentID] = append(st.childNodes[parentID], nd)
-
-	st.nodes[rootID] = nd
-	return nd
-}
-
-// func (st *convertState) convertSpans(root convert.Interval) *Node {
-// 	rootID := string(root.SpanID)
-// 	nd := &Node{
-// 		ID:    rootID,
-// 		Name:  root.OperationName,
-// 		Value: st.getValue(root),
-// 	}
-// 	st.visitedNodes[rootID] = true
-
-// 	for _, interval := range st.tree.GetIntervals() {
-// 		intervalID := string(interval.SpanID)
-// 		if _, ok := st.visitedNodes[intervalID]; ok {
-// 			continue
-// 		}
-// 		parentID := string(interval.ParentSpanID)
-// 		if _, ok := st.childNodes[parentID]; !ok {
-// 			st.childNodes[parentID] = []*Node{}
-// 		}
-// 		st.childNodes[parentID] = append(st.childNodes[parentID], st.convertSpans(interval))
-// 	}
-// 	// for _, child := range st.tree.ChildrenOf(root) {
-// 	// 	childID := string(child.SpanID)
-// 	// 	if _, ok := st.visitedNodes[childID]; ok {
-// 	// 		continue
-// 	// 	}
-// 	// 	parentID := string(child.ParentSpanID)
-// 	// 	if _, ok := st.childNodes[parentID]; !ok {
-// 	// 		st.childNodes[parentID] = []*Node{}
-// 	// 	}
-// 	// 	st.childNodes[parentID] = append(st.childNodes[parentID], st.convertSpans(child))
-// 	// }
-// 	st.nodes = append(st.nodes, nd)
-// 	return nd
-// }
-
-func (st *convertState) fixChildren() {
-	for _, nd := range st.nodes {
-		nd.Children = map[string]*Node{}
-		for _, child := range st.childNodes[nd.ID] {
-			nd.Children[nd.Name] = child
+	pp.Println(parentID)
+	if _, ok := st.nodes[parentID]; !ok {
+		st.nodes[parentID] = &Node{
+			Children: map[string]*Node{},
 		}
 	}
+
+	st.nodes[parentID].Children[rootID] = nd
+
+	// mergo.Merge(&nd, st.nodes[rootID])
+
+	if _, ok := st.nodes[rootID]; ok {
+		nd.Children = st.nodes[rootID].Children
+	}
+
+	st.nodes[rootID] = nd
+	st.visitedNodes[rootID] = true
+	return nd
 }

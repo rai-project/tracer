@@ -18,12 +18,15 @@ import (
 	"encoding/json"
 	"regexp"
 	"strings"
+
+	"github.com/rai-project/tracer/convert"
 )
 
 type Node struct {
 	ID       string
 	Name     string
 	Value    int
+	Interval *convert.Interval
 	Children map[string]*Node
 }
 
@@ -33,7 +36,13 @@ func (n *Node) Add(stackPtr *[]string, index int, value int) {
 		head := (*stackPtr)[index]
 		childPtr, ok := n.Children[head]
 		if !ok {
-			childPtr = &(Node{"", head, 0, make(map[string]*Node)})
+			childPtr = &(Node{
+				ID:       "",
+				Name:     head,
+				Value:    0,
+				Interval: nil,
+				Children: make(map[string]*Node),
+			})
 			n.Children[head] = childPtr
 		}
 		childPtr.Add(stackPtr, index-1, value)
