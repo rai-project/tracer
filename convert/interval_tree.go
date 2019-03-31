@@ -119,6 +119,82 @@ func (t IntervalTree) GetIntervals() []Interval {
 	return intervals
 }
 
+func (t IntervalTree) MaxInterval() Interval {
+	var maxInterval Interval
+
+	t.Traverse(func(interval0 augmentedtree.Interval) {
+		interval := interval0.(Interval)
+		if maxInterval.IsNil() {
+			maxInterval = interval
+			return
+		}
+		if interval.Contains(maxInterval) {
+			maxInterval = interval
+			return
+		}
+	})
+	return maxInterval
+}
+
+// func (t IntervalTree) MinInterval() Interval {
+// 	var minInterval Interval
+
+// 	t.Traverse(func(interval0 augmentedtree.Interval) {
+// 		interval := interval0.(Interval)
+// 		if minInterval.IsNil() {
+// 			minInterval = interval
+// 			return
+// 		}
+// 		if minInterval.Contans(interval) {
+// 			minInterval = interval
+// 			return
+// 		}
+// 	})
+// 	return maxInterval
+// }
+
+// func (t IntervalTree) MaxInterval() Interval {
+// 	var maxInterval Interval
+
+// 	t.Traverse(func(interval0 augmentedtree.Interval) {
+// 		interval := interval0.(Interval)
+// 		if maxInterval.IsNil() {
+// 			maxInterval = interval
+// 			return
+// 		}
+// 		if maxInterval.End() > Interval.End() {
+// 			maxInterval = interval
+// 			return
+// 		}
+// 		if maxInterval.End() == Interval.End() && maxInterval.Start() < Interval.Start() {
+// 			maxInterval = interval
+// 			return
+// 		}
+// 	})
+// 	return maxInterval
+// }
+
+// func (t IntervalTree) MinInterval() Interval {
+// 	var maxInterval Interval
+
+// 	t.Traverse(func(interval0 augmentedtree.Interval) {
+// 		interval := interval0.(Interval)
+// 		if maxInterval.IsNil() {
+// 			maxInterval = interval
+// 			return
+// 		}
+// 		if maxInterval.Start() < Interval.Start() {
+// 			maxInterval = interval
+// 			return
+// 		}
+// 		if maxInterval.Start() == Interval.Start() && maxInterval.End() > Interval.End() {
+// 			maxInterval = interval
+// 			return
+// 		}
+// 	})
+// 	return maxInterval
+// }
+
 // func (t IntervalTree) GetIntervals() []Interval {
 // 	spans := t.trace.Spans
 // 	length := len(spans)

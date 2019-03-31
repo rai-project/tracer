@@ -1,6 +1,5 @@
 package flame
 
-
 // Copyright © 2017 Martin Spier <spiermar@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,11 +14,14 @@ package flame
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package types
-
-import "encoding/json"
+import (
+	"encoding/json"
+	"regexp"
+	"strings"
+)
 
 type Node struct {
+	ID       string
 	Name     string
 	Value    int
 	Children map[string]*Node
@@ -31,7 +33,7 @@ func (n *Node) Add(stackPtr *[]string, index int, value int) {
 		head := (*stackPtr)[index]
 		childPtr, ok := n.Children[head]
 		if !ok {
-			childPtr = &(Node{head, 0, make(map[string]*Node)})
+			childPtr = &(Node{"", head, 0, make(map[string]*Node)})
 			n.Children[head] = childPtr
 		}
 		childPtr.Add(stackPtr, index-1, value)
@@ -71,8 +73,6 @@ func (n *Node) MarshalIndentJSON() ([]byte, error) {
 		Children: v,
 	}, "", "  ")
 }
-
-
 
 type Profile struct {
 	RootNode Node
