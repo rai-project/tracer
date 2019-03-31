@@ -19,7 +19,7 @@ func Marshal(trace model.Trace) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(tr)
+	return json.MarshalIndent(tr, "", "  ")
 }
 
 func Convert(tr model.Trace) (*Trace, error) {
@@ -33,6 +33,8 @@ func Convert(tr model.Trace) (*Trace, error) {
 		return nil, err
 	}
 
+	st.trace.ZeroOut()
+
 	return st.trace, nil
 }
 
@@ -45,6 +47,11 @@ func newConvertState(tr model.Trace) (*convertState, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = tree.FilterOnlyChildrenOf("PredictImage")
+	if err != nil {
+		return nil, err
+	}
+
 	jaegerTrace, err := tree.FixParentRelationship()
 	if err != nil {
 		return nil, err
@@ -87,6 +94,14 @@ func (st *convertState) convertSpan(sp model.Span) ([]TraceEvent, error) {
 	color := colorName(cat)
 	depth := st.tree.DepthOf(convert.ToInterval(sp))
 	// pp.Println(sp.StartTime)
+
+	_ = depth
+	args := map[string]interface{}{
+		"depth": depth,
+	}
+	for _, tag := range sp.Tags {
+		args[tag.Key] = tag.Value
+	}
 	common := TraceEvent{
 		Name:      sp.OperationName,
 		SpanID:    hash64(string(sp.SpanID)),
@@ -96,9 +111,7 @@ func (st *convertState) convertSpan(sp model.Span) ([]TraceEvent, error) {
 		End:       int64(sp.StartTime + sp.Duration),
 		StartTime: toTime(sp.StartTime),
 		EndTime:   toTime(sp.StartTime + sp.Duration),
-		Arg: map[string]interface{}{
-			"depth": depth,
-		},
+		// Arg:       args,
 	}
 	begin := TraceEvent{
 		EventType: "B",

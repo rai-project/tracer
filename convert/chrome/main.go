@@ -4,10 +4,11 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
+	"github.com/GeertJohan/go-sourcepath"
 	"github.com/Unknwon/com"
 	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
@@ -15,26 +16,26 @@ import (
 	"github.com/rai-project/tracer/convert/chrome"
 )
 
-func convert(path string) (string, error) {
+func convert(path string) ([]byte, error) {
 
 	if !com.IsFile(path) {
-		return "", errors.Errorf("trace %v does not exist", path)
+		return nil, errors.Errorf("trace %v does not exist", path)
 	}
 	bts, err := ioutil.ReadFile(path)
 	if err != nil {
-		return "", errors.Wrapf(err, "unable to read trace from %v", path)
+		return nil, errors.Wrapf(err, "unable to read trace from %v", path)
 	}
 
 	trace := evaluation.TraceInformation{}
 	err = json.Unmarshal(bts, &trace)
 	if err != nil {
-		return "", errors.Wrapf(err, "unable to parse trace")
+		return nil, errors.Wrapf(err, "unable to parse trace")
 	}
 	bts, err = chrome.Marshal(trace.Traces[0])
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return string(bts), nil
+	return bts, nil
 }
 
 func main() {
@@ -43,5 +44,10 @@ func main() {
 		pp.Println(err)
 		os.Exit(1)
 	}
-	fmt.Println(tr)
+	outputFile := filepath.Join(sourcepath.MustAbsoluteDir(), "_fixtures", "example_trace.json")
+	err = ioutil.WriteFile(outputFile, tr, 0600)
+	if err != nil {
+		pp.Println(err)
+		os.Exit(1)
+	}
 }
