@@ -4,8 +4,43 @@
     "value": 1000,
     "children": [
       {
+        "name": "gpu_overhead",
+        "value": 0,
+        "children": []
+      },
+      {
+        "name": "gpu_kernel",
+        "value": 0,
+        "children": []
+      },
+      {
+        "name": "Flatten",
+        "value": 0,
+        "children": []
+      },
+      {
         "name": "SyncCopyCPU2GPU",
         "value": 1,
+        "children": []
+      },
+      {
+        "name": "WaitForVar",
+        "value": 0,
+        "children": []
+      },
+      {
+        "name": "cupti_new",
+        "value": 893,
+        "children": []
+      },
+      {
+        "name": "launch_kernel",
+        "value": 0,
+        "children": []
+      },
+      {
+        "name": "stream_synchronize",
+        "value": 0,
         "children": []
       }
     ]
