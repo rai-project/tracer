@@ -7,6 +7,7 @@ import (
 
 	"github.com/Unknwon/com"
 	"github.com/Workiva/go-datastructures/augmentedtree"
+	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
 	"github.com/rai-project/evaluation"
 	model "github.com/uber/jaeger/model/json"
@@ -55,6 +56,24 @@ func (t IntervalTree) ID() string {
 	return string(t.trace.TraceID)
 }
 
+func (t IntervalTree) ImmediateChildrenOf(sp Interval) []Interval {
+	children := t.ChildrenOf(sp)
+	if sp.OperationName == "Flatten" {
+		for _, c := range children {
+			pp.Println("fl = ", c.OperationName)
+		}
+	}
+	immediateChildren := []Interval{}
+	for _, child := range children {
+		parent := t.ParentOf(child)
+
+		if parent.SpanID == sp.SpanID {
+			immediateChildren = append(immediateChildren, child)
+		}
+	}
+	return immediateChildren
+}
+
 func (t IntervalTree) ChildrenOf(sp Interval) []Interval {
 	elems := t.Query(sp)
 	res := []Interval{}
@@ -74,8 +93,21 @@ func (t IntervalTree) ChildrenOf(sp Interval) []Interval {
 }
 
 func (t IntervalTree) DepthOf(sp Interval) int {
-	elems := t.Query(sp)
-	return len(elems)
+	ii := 0
+	parent := sp
+	visited := map[model.SpanID]bool{}
+	for {
+		visited[parent.SpanID] = true
+		parent = t.ParentOf(parent)
+		if visited[parent.SpanID] {
+			return ii
+		}
+		if parent.IsNil() {
+			return ii
+		}
+		ii++
+	}
+	return ii
 }
 
 func (t IntervalTree) ParentsOf(sp Interval) []Interval {
@@ -103,8 +135,12 @@ func (t IntervalTree) ParentOf(sp Interval) Interval {
 		return elems[0]
 	}
 	sort.Slice(elems, func(ii, jj int) bool {
-		return elems[ii].LowAtDimension(0) > elems[jj].LowAtDimension(0)
+		// return elems[ii].LowAtDimension(0) <= elems[jj].LowAtDimension(0)
+		return elems[jj].Contains(elems[ii])
 	})
+	// for _, e := range elems {
+	// 	pp.Println(e.SpanID)
+	// }
 	return elems[0]
 }
 

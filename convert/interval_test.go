@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/GeertJohan/go-sourcepath"
+	"github.com/k0kubun/pp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -58,7 +59,14 @@ func TestNewIntervalTree(t *testing.T) {
 
 	firstDropoutChildParent := tree.ParentOf(firstDropoutChild)
 	assert.NotEmpty(t, firstDropoutChildParent)
+	pp.Println(firstDropoutChildParent.OperationName)
 	// pp.Println(firstDropoutChildParent.OperationName)
+
+	immediateDropoutChilden := tree.ImmediateChildrenOf(firstDropoutSpan)
+	assert.NotEmpty(t, immediateDropoutChilden)
+	for _, c := range immediateDropoutChilden {
+		assert.NotEmpty(t, c)
+	}
 
 	// pp.Println(int64(firstDropoutSpan.Start()))
 	// pp.Println(int64(firstDropoutSpan.Duration))
