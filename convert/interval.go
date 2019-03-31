@@ -12,6 +12,12 @@ type Interval struct {
 	*model.Span
 }
 
+type Intervals []Interval
+
+func (t Intervals) Len() int           { return len(t) }
+func (t Intervals) Swap(i, j int)      { t[i], t[j] = t[j], t[i] }
+func (t Intervals) Less(i, j int) bool { return t[i].Start() < t[j].Start() }
+
 func hash(s string) uint64 {
 	h := fnv.New64a()
 	h.Write([]byte(s))
@@ -44,7 +50,8 @@ func (i Interval) Contains(iv Interval) bool {
 	if iv.Span == nil {
 		return false
 	}
-	return i.Start() <= iv.Start() && i.End() >= iv.End()
+	// return i.Start() <= iv.Start() && iv.End() <= i.End()
+	return i.OverlapsAtDimension(iv, 0)
 }
 
 func (i Interval) LowAtDimension(uint64) int64 {

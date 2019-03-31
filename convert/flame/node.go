@@ -16,18 +16,17 @@ package flame
 
 import (
 	"encoding/json"
-	"regexp"
 	"strings"
 
 	"github.com/rai-project/tracer/convert"
 )
 
 type Node struct {
-	ID       string
-	Name     string
-	Value    int
-	Interval *convert.Interval
-	Children map[string]*Node
+	ID       string            `json:"id,omitempty"`
+	Name     string            `json:"name,omitempty"`
+	Value    int               `json:"value,omitempty"`
+	Interval *convert.Interval `json:"-"`
+	Children map[string]*Node  `json:"children,omitempty"`
 }
 
 func (n *Node) Add(stackPtr *[]string, index int, value int) {
@@ -84,7 +83,7 @@ func (n *Node) MarshalIndentJSON() ([]byte, error) {
 }
 
 type Profile struct {
-	RootNode Node
+	RootNode *Node
 	Stack    []string
 }
 
@@ -98,16 +97,22 @@ func (p *Profile) CloseStack() {
 }
 
 func (p *Profile) AddFrame(name string) {
-	re, _ := regexp.Compile(`^\(`) // Skip process names
-	if !re.MatchString(name) {
-		name = strings.Replace(name, ";", ":", -1) // replace ; with :
-		name = strings.Replace(name, "<", "", -1)  // remove '<'
-		name = strings.Replace(name, ">", "", -1)  // remove '>'
-		name = strings.Replace(name, "\\", "", -1) // remove '\'
-		name = strings.Replace(name, "\"", "", -1) // remove '"'
-		if index := strings.Index(name, "("); index != -1 {
-			name = name[:index] // delete everything after '('
-		}
-		p.Stack = append(p.Stack, name)
+	name = strings.Replace(name, ";", ":", -1) // replace ; with :
+	name = strings.Replace(name, "<", "", -1)  // remove '<'
+	name = strings.Replace(name, ">", "", -1)  // remove '>'
+	name = strings.Replace(name, "\\", "", -1) // remove '\'
+	name = strings.Replace(name, "\"", "", -1) // remove '"'
+
+	p.Stack = append(p.Stack, name)
+}
+
+func (p *Profile) PopFrame() {
+	if len(p.Stack) == 0 {
+		return
 	}
+	if len(p.Stack) == 1 {
+		p.Stack = []string{}
+		return
+	}
+	p.Stack = p.Stack[:len(p.Stack)-1]
 }
