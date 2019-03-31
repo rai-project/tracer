@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"sort"
 
-	"github.com/k0kubun/pp"
 	"github.com/rai-project/tracer/convert"
 	model "github.com/uber/jaeger/model/json"
 )
@@ -33,6 +32,7 @@ func Convert(tr model.Trace) (*Profile, error) {
 		return nil, err
 	}
 
+	// pp.Println(st.root.OperationName)
 	nd := st.convertSpans(nil, st.root, 0)
 
 	for _, nd := range st.nodes {
@@ -66,10 +66,10 @@ func newConvertState(tr model.Trace) (*convertState, error) {
 		return nil, err
 	}
 
-	err = tree.FilterOnlyChildrenOf("PredictImage")
-	if err != nil {
-		return nil, err
-	}
+	// err = tree.FilterOnlyChildrenOf("PredictImage")
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	jaegerTrace, err = tree.FixParentRelationship()
 	if err != nil {
@@ -107,7 +107,7 @@ func (st *convertState) convertSpans(rootNode *Node, root convert.Interval, dept
 
 	// pp.Println(root.OperationName)
 
-	// st.visitedNodes[rootID] = true
+	st.visitedNodes[rootID] = true
 	nd, ok := st.nodes[rootID]
 	if !ok {
 		nd = &Node{
@@ -128,8 +128,8 @@ func (st *convertState) convertSpans(rootNode *Node, root convert.Interval, dept
 
 	st.profile.AddFrame(root.OperationName)
 	defer func() {
-		nd.Add(&st.profile.Stack, len(st.profile.Stack)-1, 1)
-		// st.profile.PopFrame()
+		// nd.Add(&st.profile.Stack, len(st.profile.Stack)-1, 1)
+		st.profile.PopFrame()
 	}()
 
 	// oldStack := st.profile.Stack
@@ -159,7 +159,7 @@ func (st *convertState) convertSpans(rootNode *Node, root convert.Interval, dept
 
 	// pp.Println(len(stack), "  ", st.tree.DepthOf(root)-1)
 	if rootNode != nil {
-		pp.Println(len(st.profile.Stack), "  ", depth)
+		// pp.Println(len(st.profile.Stack), "  ", depth)
 		rootNode.Add(&st.profile.Stack, depth, st.getValue(root))
 	}
 
