@@ -12,7 +12,7 @@ type convertState struct {
 	jaegerTrace  model.Trace
 	profile      *Profile
 	root         convert.Interval
-	nodes        []*Node
+	nodes        map[string]*Node
 	childNodes   map[string][]*Node
 	visitedNodes map[string]bool
 }
@@ -69,7 +69,7 @@ func newConvertState(tr model.Trace) (*convertState, error) {
 		root:         tree.MaxInterval(),
 		jaegerTrace:  jaegerTrace,
 		profile:      profile,
-		nodes:        []*Node{},
+		nodes:        map[string]*Node{},
 		childNodes:   map[string][]*Node{},
 		visitedNodes: map[string]bool{},
 	}, nil
@@ -82,39 +82,73 @@ func (st *convertState) getValue(sp convert.Interval) int {
 }
 
 func (st *convertState) convertSpans(root convert.Interval) *Node {
+	nd := st.convertSpan(root)
+	for _, interval := range st.tree.GetIntervals() {
+		st.convertSpan(interval)
+	}
+
+	return nd
+}
+
+func (st *convertState) convertSpan(root convert.Interval) *Node {
 	rootID := string(root.SpanID)
+
+	if val, ok := st.visitedNodes[rootID]; ok && val {
+		return st.nodes[rootID]
+	}
+
 	nd := &Node{
 		ID:    rootID,
 		Name:  root.OperationName,
 		Value: st.getValue(root),
 	}
+
 	st.visitedNodes[rootID] = true
 
-	for _, interval := range st.tree.GetIntervals() {
-		intervalID := string(interval.SpanID)
-		if _, ok := st.visitedNodes[intervalID]; ok {
-			continue
-		}
-		parentID := string(interval.ParentSpanID)
-		if _, ok := st.childNodes[parentID]; !ok {
-			st.childNodes[parentID] = []*Node{}
-		}
-		st.childNodes[parentID] = append(st.childNodes[parentID], st.convertSpans(interval))
+	parentID := string(root.ParentSpanID)
+	if _, ok := st.childNodes[parentID]; !ok {
+		st.childNodes[parentID] = []*Node{}
 	}
-	// for _, child := range st.tree.ChildrenOf(root) {
-	// 	childID := string(child.SpanID)
-	// 	if _, ok := st.visitedNodes[childID]; ok {
-	// 		continue
-	// 	}
-	// 	parentID := string(child.ParentSpanID)
-	// 	if _, ok := st.childNodes[parentID]; !ok {
-	// 		st.childNodes[parentID] = []*Node{}
-	// 	}
-	// 	st.childNodes[parentID] = append(st.childNodes[parentID], st.convertSpans(child))
-	// }
-	st.nodes = append(st.nodes, nd)
+	st.childNodes[parentID] = append(st.childNodes[parentID], nd)
+
+	st.nodes[rootID] = nd
 	return nd
 }
+
+// func (st *convertState) convertSpans(root convert.Interval) *Node {
+// 	rootID := string(root.SpanID)
+// 	nd := &Node{
+// 		ID:    rootID,
+// 		Name:  root.OperationName,
+// 		Value: st.getValue(root),
+// 	}
+// 	st.visitedNodes[rootID] = true
+
+// 	for _, interval := range st.tree.GetIntervals() {
+// 		intervalID := string(interval.SpanID)
+// 		if _, ok := st.visitedNodes[intervalID]; ok {
+// 			continue
+// 		}
+// 		parentID := string(interval.ParentSpanID)
+// 		if _, ok := st.childNodes[parentID]; !ok {
+// 			st.childNodes[parentID] = []*Node{}
+// 		}
+// 		st.childNodes[parentID] = append(st.childNodes[parentID], st.convertSpans(interval))
+// 	}
+// 	// for _, child := range st.tree.ChildrenOf(root) {
+// 	// 	childID := string(child.SpanID)
+// 	// 	if _, ok := st.visitedNodes[childID]; ok {
+// 	// 		continue
+// 	// 	}
+// 	// 	parentID := string(child.ParentSpanID)
+// 	// 	if _, ok := st.childNodes[parentID]; !ok {
+// 	// 		st.childNodes[parentID] = []*Node{}
+// 	// 	}
+// 	// 	st.childNodes[parentID] = append(st.childNodes[parentID], st.convertSpans(child))
+// 	// }
+// 	st.nodes = append(st.nodes, nd)
+// 	return nd
+// }
 
 func (st *convertState) fixChildren() {
 	for _, nd := range st.nodes {
