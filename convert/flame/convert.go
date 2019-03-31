@@ -147,7 +147,11 @@ func (st *convertState) convertSpans(rootNode *Node, root convert.Interval, dept
 		childID := string(child.SpanID)
 		// st.profile.AddFrame(childID)
 		_ = childID
-		st.convertSpans(rootNode, child, depth+1)
+		e := st.convertSpans(nd, child, depth+1)
+		if e == nil {
+			continue
+		}
+		nd.Children[childID] = e
 		// st.profile.AddFrame(child.OperationName)
 		// pp.Println(len(st.profile.Stack), "  ", st.tree.DepthOf(child)-2)
 		// nd.Add(&st.profile.Stack, st.tree.DepthOf(child)-2, st.getValue(child))
@@ -158,10 +162,10 @@ func (st *convertState) convertSpans(rootNode *Node, root convert.Interval, dept
 	// pp.Println(st.profile.Stack, parent)
 
 	// pp.Println(len(stack), "  ", st.tree.DepthOf(root)-1)
-	if rootNode != nil {
-		// pp.Println(len(st.profile.Stack), "  ", depth)
-		rootNode.Add(&st.profile.Stack, depth, st.getValue(root))
-	}
+	// if rootNode != nil {
+	// 	// pp.Println(len(st.profile.Stack), "  ", depth)
+	// 	rootNode.Add(&st.profile.Stack, depth, st.getValue(root))
+	// }
 
 	return nd
 }
