@@ -22,47 +22,11 @@ import (
 )
 
 type Node struct {
-	ID       string            `json:"id,omitempty"`
+	ID       string            `json:"-,omitempty"`
 	Name     string            `json:"name,omitempty"`
 	Value    int               `json:"value,omitempty"`
 	Interval *convert.Interval `json:"-"`
-	Children map[string]*Node  `json:"children,omitempty"`
-}
-
-func (n *Node) Add(stackPtr *[]string, index int, value int) {
-	n.Value += value
-	if index >= 0 {
-		head := (*stackPtr)[index]
-		childPtr, ok := n.Children[head]
-		if !ok {
-			childPtr = &(Node{
-				ID:       "",
-				Name:     head,
-				Value:    0,
-				Interval: nil,
-				Children: make(map[string]*Node),
-			})
-			n.Children[head] = childPtr
-		}
-		childPtr.Add(stackPtr, index-1, value)
-	}
-}
-
-func (n *Node) MarshalJSON() ([]byte, error) {
-	v := make([]Node, 0, len(n.Children))
-	for _, value := range n.Children {
-		v = append(v, *value)
-	}
-
-	return json.Marshal(&struct {
-		Name     string `json:"name"`
-		Value    int    `json:"value"`
-		Children []Node `json:"children"`
-	}{
-		Name:     n.Name,
-		Value:    n.Value,
-		Children: v,
-	})
+	Children []*Node           `json:"children,omitempty"`
 }
 
 func (n *Node) MarshalIndentJSON() ([]byte, error) {
@@ -82,37 +46,12 @@ func (n *Node) MarshalIndentJSON() ([]byte, error) {
 	}, "", "  ")
 }
 
-type Profile struct {
-	RootNode *Node
-	Stack    []string
-}
-
-func (p *Profile) OpenStack() {
-	p.Stack = []string{}
-}
-
-func (p *Profile) CloseStack() {
-	p.RootNode.Add(&p.Stack, len(p.Stack)-1, 1)
-	p.Stack = []string{}
-}
-
-func (p *Profile) AddFrame(name string) {
+func cleanName(name string) string {
 	name = strings.Replace(name, ";", ":", -1) // replace ; with :
 	name = strings.Replace(name, "<", "", -1)  // remove '<'
 	name = strings.Replace(name, ">", "", -1)  // remove '>'
 	name = strings.Replace(name, "\\", "", -1) // remove '\'
 	name = strings.Replace(name, "\"", "", -1) // remove '"'
 
-	p.Stack = append(p.Stack, name)
-}
-
-func (p *Profile) PopFrame() {
-	if len(p.Stack) == 0 {
-		return
-	}
-	if len(p.Stack) == 1 {
-		p.Stack = []string{}
-		return
-	}
-	p.Stack = p.Stack[:len(p.Stack)-1]
+	return name
 }

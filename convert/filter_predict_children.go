@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func (t *IntervalTree) FilterOnlyChildrenOf(operationName string) error {
+func (t *IntervalTree) FilterOnlyChildrenOf(operationName string) (*Interval, error) {
 	var rootParent Interval
 	allIntervals := t.GetIntervals()
 	operationName = strings.ToLower(operationName)
@@ -16,7 +16,7 @@ func (t *IntervalTree) FilterOnlyChildrenOf(operationName string) error {
 		}
 	}
 	if rootParent.IsNil() {
-		return errors.New("unable to find root node")
+		return nil, errors.New("unable to find root node")
 	}
 	children := t.ChildrenOf(rootParent)
 	childrenIds := map[string]bool{}
@@ -34,5 +34,5 @@ func (t *IntervalTree) FilterOnlyChildrenOf(operationName string) error {
 		t.Delete(interval)
 	}
 
-	return nil
+	return &rootParent, nil
 }

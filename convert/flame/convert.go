@@ -3,18 +3,17 @@ package flame
 import (
 	"encoding/json"
 	"sort"
+	"time"
 
 	"github.com/rai-project/tracer/convert"
 	model "github.com/uber/jaeger/model/json"
 )
 
 type convertState struct {
-	tree         *convert.IntervalTree
-	jaegerTrace  model.Trace
-	profile      *Profile
-	root         convert.Interval
-	nodes        map[string]*Node
-	visitedNodes map[string]bool
+	tree        *convert.IntervalTree
+	jaegerTrace model.Trace
+	root        convert.Interval
+	nodes       map[string]*Node
 }
 
 func Marshal(trace model.Trace) ([]byte, error) {
@@ -22,28 +21,18 @@ func Marshal(trace model.Trace) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return json.MarshalIndent(tr, "", " ")
-	// return tr.RootNode.MarshalJSON()
+	return json.Marshal(tr)
 }
 
-func Convert(tr model.Trace) (*Profile, error) {
+func Convert(tr model.Trace) (*Node, error) {
 	st, err := newConvertState(tr)
 	if err != nil {
 		return nil, err
 	}
 
-	// pp.Println(st.root.OperationName)
 	nd := st.convertSpans(nil, st.root, 0)
 
-	for _, nd := range st.nodes {
-		println(nd.ID, " ", st.nodes[string(nd.Interval.ParentSpanID)].ID)
-	}
-
-	st.profile.RootNode = nd
-	// st.profile.RootNode = st.nodes[string(st.root.SpanID)]
-	// pp.Println(len(st.nodes))
-
-	return st.profile, nil
+	return nd, nil
 }
 
 func newConvertState(tr model.Trace) (*convertState, error) {
@@ -66,10 +55,10 @@ func newConvertState(tr model.Trace) (*convertState, error) {
 		return nil, err
 	}
 
-	// err = tree.FilterOnlyChildrenOf("PredictImage")
-	// if err != nil {
-	// 	return nil, err
-	// }
+	rootInterval, err := tree.FilterOnlyChildrenOf("PredictImage")
+	if err != nil {
+		return nil, err
+	}
 
 	jaegerTrace, err = tree.FixParentRelationship()
 	if err != nil {
@@ -80,138 +69,57 @@ func newConvertState(tr model.Trace) (*convertState, error) {
 		return nil, err
 	}
 
-	profile := &Profile{}
-
 	return &convertState{
-		tree:         tree,
-		root:         tree.MaxInterval(),
-		jaegerTrace:  jaegerTrace,
-		profile:      profile,
-		nodes:        map[string]*Node{},
-		visitedNodes: map[string]bool{},
+		tree:        tree,
+		root:        *rootInterval,
+		jaegerTrace: jaegerTrace,
+		nodes:       map[string]*Node{},
 	}, nil
 }
 
 func (st *convertState) getValue(sp convert.Interval) int {
 	root := st.root
-	rootDuration := 1000 * (float64(sp.Duration) / float64(root.Duration))
+	rootDuration := float64(time.Millisecond) * (float64(sp.Duration) / float64(root.Duration))
 	return int(rootDuration)
 }
 
 func (st *convertState) convertSpans(rootNode *Node, root convert.Interval, depth int) *Node {
 	rootID := string(root.SpanID)
 
-	if _, ok := st.visitedNodes[rootID]; ok {
+	if root.OperationName == "cupti_new" {
 		return nil
 	}
 
-	// pp.Println(root.OperationName)
-
-	st.visitedNodes[rootID] = true
-	nd, ok := st.nodes[rootID]
-	if !ok {
-		nd = &Node{
-			ID:       rootID,
-			Name:     root.OperationName,
-			Value:    st.getValue(root),
-			Interval: &root,
-			Children: map[string]*Node{},
-		}
-		if st.profile.RootNode == nil {
-			st.profile.RootNode = nd
-			rootNode = nd
-			st.profile.OpenStack()
-			// st.profile.AddFrame(root.OperationName)
-			defer st.profile.CloseStack()
-		}
+	if _, ok := st.nodes[rootID]; ok {
+		return nil
 	}
 
-	st.profile.AddFrame(root.OperationName)
-	defer func() {
-		// nd.Add(&st.profile.Stack, len(st.profile.Stack)-1, 1)
-		st.profile.PopFrame()
-	}()
-
-	// oldStack := st.profile.Stack
-	// defer func() {
-	// 	st.profile.CloseStack()
-	// 	st.profile.Stack = oldStack
-	// }()
+	nd := &Node{
+		ID:       rootID,
+		Name:     cleanName(root.OperationName),
+		Value:    0,
+		Interval: &root,
+		Children: []*Node{},
+	}
+	st.nodes[rootID] = nd
 
 	children := convert.Intervals(st.tree.ImmediateChildrenOf(root))
 	sort.Sort(children)
 
-	// pp.Println(root.OperationName, "  ", len(children))
-
-	for _, child := range children {
-		childID := string(child.SpanID)
-		// st.profile.AddFrame(childID)
-		_ = childID
+	for ii := len(children) - 1; ii >= 0; ii-- {
+		child := children[ii]
+		// for _, child := range children {
 		e := st.convertSpans(nd, child, depth+1)
 		if e == nil {
 			continue
 		}
-		nd.Children[childID] = e
-		// st.profile.AddFrame(child.OperationName)
-		// pp.Println(len(st.profile.Stack), "  ", st.tree.DepthOf(child)-2)
-		// nd.Add(&st.profile.Stack, st.tree.DepthOf(child)-2, st.getValue(child))
-		// st.profile.PopFrame()
-
+		nd.Children = append(nd.Children, e)
+		nd.Value += e.Value
 	}
 
-	// pp.Println(st.profile.Stack, parent)
-
-	// pp.Println(len(stack), "  ", st.tree.DepthOf(root)-1)
-	// if rootNode != nil {
-	// 	// pp.Println(len(st.profile.Stack), "  ", depth)
-	// 	rootNode.Add(&st.profile.Stack, depth, st.getValue(root))
-	// }
+	if len(children) == 0 {
+		nd.Value = st.getValue(root)
+	}
 
 	return nd
 }
-
-// func (st *convertState) convertSpans(root convert.Interval) *Node {
-// 	nd := st.convertSpan(root)
-// 	for _, interval := range st.tree.GetIntervals() {
-// 		// pp.Println(interval.OperationName, st.visitedNodes[string(interval.SpanID)])
-// 		st.convertSpan(interval)
-// 	}
-
-// 	return nd
-// }
-
-// func (st *convertState) convertSpan(root convert.Interval) *Node {
-// 	rootID := string(root.SpanID)
-
-// 	if val, ok := st.visitedNodes[rootID]; ok && val {
-// 		return st.nodes[rootID]
-// 	}
-
-// 	nd := &Node{
-// 		ID:       rootID,
-// 		Name:     root.OperationName,
-// 		Value:    st.getValue(root),
-// 		Interval: &root,
-// 		Children: map[string]*Node{},
-// 	}
-
-// 	parentID := string(root.ParentSpanID)
-// 	pp.Println(parentID)
-// 	if _, ok := st.nodes[parentID]; !ok {
-// 		st.nodes[parentID] = &Node{
-// 			Children: map[string]*Node{},
-// 		}
-// 	}
-
-// 	st.nodes[parentID].Add[rootID] = nd
-
-// 	// mergo.Merge(&nd, st.nodes[rootID])
-
-// 	if _, ok := st.nodes[rootID]; ok {
-// 		nd.Children = st.nodes[rootID].Children
-// 	}
-
-// 	st.nodes[rootID] = nd
-// 	st.visitedNodes[rootID] = true
-// 	return nd
-// }
