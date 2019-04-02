@@ -2,6 +2,7 @@ package chrome
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/imdario/mergo"
 	"github.com/rai-project/tracer/convert"
@@ -33,21 +34,21 @@ func Convert(tr model.Trace) (*Trace, error) {
 		return nil, err
 	}
 
-	st.trace.ZeroOut()
+	// st.trace.ZeroOut()
 
 	return st.trace, nil
 }
 
 func newConvertState(tr model.Trace) (*convertState, error) {
-	tr, err := convert.FixTrace(tr)
-	if err != nil {
-		return nil, err
-	}
+	// tr, err := convert.FixTrace(tr)
+	// if err != nil {
+	// 	return nil, err
+	// }
 	tree, err := convert.NewIntervalTree(tr)
 	if err != nil {
 		return nil, err
 	}
-	err = tree.FilterOnlyChildrenOf("PredictImage")
+	_, err = tree.FilterOnlyChildrenOf("PredictImage")
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +98,9 @@ func (st *convertState) convertSpan(sp model.Span) ([]TraceEvent, error) {
 
 	_ = depth
 	args := map[string]interface{}{
-		"depth": depth,
+		"depth":      depth,
+		"start_time": sp.StartTime, //toTime(sp.StartTime)
+		"duration":   sp.Duration,  //toTime(sp.StartTime + sp.Duration)
 	}
 	for _, tag := range sp.Tags {
 		args[tag.Key] = tag.Value
@@ -111,8 +114,11 @@ func (st *convertState) convertSpan(sp model.Span) ([]TraceEvent, error) {
 		End:       int64(sp.StartTime + sp.Duration),
 		StartTime: toTime(sp.StartTime),
 		EndTime:   toTime(sp.StartTime + sp.Duration),
-		// Arg:       args,
+		Arg:       args, // map[string]interface{}{},
 	}
+	// region := TraceEvent{
+	// 	EventType: "X",
+	// }
 	begin := TraceEvent{
 		EventType: "B",
 		Timestamp: formatTime(sp.StartTime),
@@ -122,6 +128,10 @@ func (st *convertState) convertSpan(sp model.Span) ([]TraceEvent, error) {
 		Timestamp: formatTime(sp.StartTime + sp.Duration),
 	}
 
+	// if err := mergo.Merge(&region, common); err != nil {
+	// 	return nil, err
+	// }
+
 	if err := mergo.Merge(&begin, common); err != nil {
 		return nil, err
 	}
@@ -130,11 +140,11 @@ func (st *convertState) convertSpan(sp model.Span) ([]TraceEvent, error) {
 		return nil, err
 	}
 
-	return []TraceEvent{begin, end}, nil
+	return []TraceEvent{ /*region,*/ begin, end}, nil
 }
 
 func formatTime(t0 uint64) float64 {
-	// t := toTime(t0)
-	// return t.UnixNano()
-	return float64(t0)
+	d := toDuration(t0)
+	return float64(d) / float64(time.Millisecond)
+	// return float64(t0)
 }
