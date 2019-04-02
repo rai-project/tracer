@@ -43,19 +43,19 @@ func mustTimeUnit(u string) time.Duration {
 // Trace is an entry of trace format.
 // https://github.com/catapult-project/catapult/tree/master/tracing
 type TraceEvent struct {
-	Name      string      `json:"name,omitempty"`
-	EventType string      `json:"ph"`
-	Scope     string      `json:"s,omitempty"`
-	Timestamp float64     `json:"ts"`
-	Duration  float64     `json:"dur,omitempty"`
-	ProcessID uint64      `json:"pid"`
-	ThreadID  uint64      `json:"tid"`
-	SpanID    uint64      `json:"id,omitempty"`
-	Stack     int         `json:"sf,omitempty"`
-	EndStack  int         `json:"esf,omitempty"`
-	Arg       interface{} `json:"args,omitempty"`
-	ColorName string      `json:"cname,omitempty"`
-	Category  string      `json:"cat,omitempty"`
+	Name      string                 `json:"name,omitempty"`
+	EventType string                 `json:"ph"`
+	Scope     string                 `json:"s,omitempty"`
+	Timestamp float64                `json:"ts"`
+	Duration  float64                `json:"dur,omitempty"`
+	ProcessID uint64                 `json:"pid"`
+	ThreadID  uint64                 `json:"tid"`
+	SpanID    uint64                 `json:"id,omitempty"`
+	Stack     int                    `json:"sf,omitempty"`
+	EndStack  int                    `json:"esf,omitempty"`
+	Arg       map[string]interface{} `json:"args,omitempty"`
+	ColorName string                 `json:"cname,omitempty"`
+	Category  string                 `json:"cat,omitempty"`
 
 	Start     int64         `json:"start,omitempty"`
 	End       int64         `json:"end,omitempty"`
