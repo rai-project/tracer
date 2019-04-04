@@ -8,7 +8,6 @@ import (
 	"github.com/Unknwon/com"
 	"github.com/Workiva/go-datastructures/augmentedtree"
 	"github.com/pkg/errors"
-	"github.com/rai-project/evaluation"
 	model "github.com/uber/jaeger/model/json"
 	"github.com/ulule/deepcopier"
 )
@@ -30,7 +29,7 @@ func NewIntervalTreeFromTraceFile(path string) (*IntervalTree, error) {
 }
 
 func NewIntervalTreeFromTraceString(data string) (*IntervalTree, error) {
-	trace := evaluation.TraceInformation{}
+	trace := model.Trace{}
 	bts := []byte(data)
 	err := json.Unmarshal(bts, &trace)
 	if err != nil {
