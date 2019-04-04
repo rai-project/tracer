@@ -35,7 +35,7 @@ func NewIntervalTreeFromTraceString(data string) (*IntervalTree, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to parse trace")
 	}
-	return NewIntervalTree(trace.Traces[0])
+	return NewIntervalTree(trace)
 }
 
 func NewIntervalTree(trace model.Trace) (*IntervalTree, error) {
