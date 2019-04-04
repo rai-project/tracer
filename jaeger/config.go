@@ -12,7 +12,7 @@ import (
 )
 
 type jaegerConfig struct {
-	Endpoints   []string      `json:"endpoints" config:"tracer.endpoints" env:"TRACER_ENDPOINTS"`
+	Endpoints   []string      `json:"endpoints" config:"tracer.endpoints"`
 	LevelString string        `json:"level" config:"tracer.level"`
 	Level       tracer.Level  `json:"-" config:"-"`
 	done        chan struct{} `json:"-" config:"-"`
