@@ -73,9 +73,13 @@
   branch = "master"
   name = "github.com/rai-project/config"
 
-[[constraint]]
+[[override]]
   branch = "master"
   name = "github.com/rai-project/evaluation"
+
+[[override]]
+  version = "1.7.0"
+  name = "github.com/fatih/color"
 
 [[constraint]]
   branch = "master"
