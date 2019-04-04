@@ -12,8 +12,8 @@ import (
 	"github.com/Unknwon/com"
 	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
-	"github.com/rai-project/evaluation"
 	"github.com/rai-project/tracer/convert/chrome"
+	model "github.com/uber/jaeger/model/json"
 )
 
 func convert(path string) ([]byte, error) {
@@ -26,12 +26,12 @@ func convert(path string) ([]byte, error) {
 		return nil, errors.Wrapf(err, "unable to read trace from %v", path)
 	}
 
-	trace := evaluation.TraceInformation{}
+	trace := model.Trace{}
 	err = json.Unmarshal(bts, &trace)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to parse trace")
 	}
-	bts, err = chrome.Marshal(trace.Traces[0])
+	bts, err = chrome.Marshal(trace)
 	if err != nil {
 		return nil, err
 	}
