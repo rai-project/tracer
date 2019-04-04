@@ -28,6 +28,16 @@ func Std() Tracer {
 	return stdTracer
 }
 
+func ResetStd() Tracer {
+	std, err := New(config.App.Name)
+	if err != nil {
+		SetStd(noop)
+		return nil
+	}
+	SetStd(std)
+	return std
+}
+
 func New(serviceName string) (Tracer, error) {
 	backendName := Config.Provider
 	if backendName == "" || !Config.Enabled {
@@ -139,12 +149,7 @@ func init() {
 	}
 	config.AfterInit(func() {
 		loadNoop(config.App.Name)
-		std, err := New(config.App.Name)
-		if err != nil {
-			SetStd(noop)
-			return
-		}
-		SetStd(std)
+		ResetStd()
 
 		if runtime.GOOS == "linux" {
 			for _, o := range observer.Config.ObserverNames {
