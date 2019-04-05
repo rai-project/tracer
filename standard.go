@@ -122,6 +122,13 @@ func Provider() string {
 	return stdTracer.Name()
 }
 
+func GetLevel() Level {
+	if stdTracer == nil {
+		return NO_TRACE
+	}
+	return stdTracer.Level()
+}
+
 func SetLevel(lvl Level) {
 	if stdTracer == nil {
 		return

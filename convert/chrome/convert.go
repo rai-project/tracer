@@ -2,6 +2,7 @@ package chrome
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/imdario/mergo"
@@ -48,7 +49,7 @@ func newConvertState(tr model.Trace) (*convertState, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = tree.FilterOnlyChildrenOf("PredictImage")
+	_, err = tree.FilterOnlyChildrenOf("evaluate_predictions")
 	if err != nil {
 		return nil, err
 	}
@@ -77,8 +78,8 @@ func newConvertState(tr model.Trace) (*convertState, error) {
 func (st *convertState) convertSpans() error {
 	spans := st.jaegerTrace.Spans
 	events := []TraceEvent{}
-	for _, span := range spans {
-		spanEvents, err := st.convertSpan(span)
+	for ii, span := range spans {
+		spanEvents, err := st.convertSpan(ii, span)
 		if err != nil {
 			return err
 		}
@@ -90,7 +91,7 @@ func (st *convertState) convertSpans() error {
 	return nil
 }
 
-func (st *convertState) convertSpan(sp model.Span) ([]TraceEvent, error) {
+func (st *convertState) convertSpan(idx int, sp model.Span) ([]TraceEvent, error) {
 	cat := convert.Classify(sp)
 	color := colorName(cat)
 	depth := st.tree.DepthOf(convert.ToInterval(sp))
@@ -106,7 +107,7 @@ func (st *convertState) convertSpan(sp model.Span) ([]TraceEvent, error) {
 		args[tag.Key] = tag.Value
 	}
 	common := TraceEvent{
-		Name:      sp.OperationName,
+		Name:      fmt.Sprintf("%v(%v)", sp.OperationName, idx),
 		SpanID:    hash64(string(sp.SpanID)),
 		Category:  cat,
 		ColorName: color,
