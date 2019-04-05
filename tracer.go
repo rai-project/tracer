@@ -1,9 +1,9 @@
 package tracer
 
 import (
+	"context"
 	"io"
 
-	context "context"
 	opentracing "github.com/opentracing/opentracing-go"
 )
 

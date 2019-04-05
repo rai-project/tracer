@@ -1,10 +1,10 @@
 package zipkin
 
 import (
+	"context"
 	"errors"
 	"io"
 
-	context "context"
 	opentracing "github.com/opentracing/opentracing-go"
 	zipkin "github.com/openzipkin/zipkin-go-opentracing"
 	"github.com/rai-project/tracer"

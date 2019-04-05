@@ -1,11 +1,10 @@
 package ctimer
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
-
-	"context"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/rai-project/tracer"
