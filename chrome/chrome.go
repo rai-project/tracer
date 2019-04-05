@@ -1,10 +1,9 @@
 package chrome
 
 import (
+	"context"
 	"fmt"
 	"time"
-
-	"context"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"

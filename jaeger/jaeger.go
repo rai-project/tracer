@@ -1,28 +1,22 @@
 package jaeger
 
 import (
+	"context"
 	"errors"
 	"io"
 	"runtime"
 	"strings"
 
-	opentracing "github.com/opentracing/opentracing-go"
-
-	"github.com/rai-project/config"
-
 	//machineinfo "github.com/rai-project/machine/info"
-	context "context"
-
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/rai-project/config"
 	osinfo "github.com/rai-project/machine/os"
 	"github.com/rai-project/tracer"
 	"github.com/rai-project/tracer/defaults"
 	"github.com/rai-project/tracer/observer"
 	raiutils "github.com/rai-project/utils"
 	"github.com/rai-project/uuid"
-
-	//
 	jaeger "github.com/uber/jaeger-client-go"
-
 	"github.com/uber/jaeger-client-go/transport/zipkin"
 	zpk "github.com/uber/jaeger-client-go/zipkin"
 )
