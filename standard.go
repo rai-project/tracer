@@ -6,10 +6,10 @@ import (
 	"sync"
 
 	opentracing "github.com/opentracing/opentracing-go"
+
 	"github.com/rai-project/config"
 	"github.com/rai-project/tracer/defaults"
 	"github.com/rai-project/tracer/observer"
-	"golang.org/x/sync/syncmap"
 )
 
 var (
@@ -29,6 +29,9 @@ func Std() Tracer {
 }
 
 func ResetStd() Tracer {
+	if stdTracer != nil {
+		stdTracer.Close()
+	}
 	std, err := New(config.App.Name)
 	if err != nil {
 		SetStd(noop)
@@ -98,20 +101,11 @@ func Enabled() bool {
 }
 
 func Close() error {
-	mut.Lock()
-	defer mut.Unlock()
-	openTracers.Range(func(_ interface{}, value interface{}) bool {
-		tr, ok := value.(Tracer)
-		if !ok {
-			return true
-		}
-		err := tr.Close()
-		if err != nil {
-			log.WithError(err).WithField("tracer", tr.Name()).Error("Failed to close tracer")
-		}
-		return true
-	})
-	openTracers = syncmap.Map{}
+	if stdTracer != nil {
+		err := stdTracer.Close()
+		stdTracer = nil
+		return err
+	}
 	return nil
 }
 
