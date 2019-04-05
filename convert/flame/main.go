@@ -13,8 +13,8 @@ import (
 	"github.com/Unknwon/com"
 	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
+	cnv "github.com/rai-project/tracer/convert"
 	"github.com/rai-project/tracer/convert/flame"
-	model "github.com/uber/jaeger/model/json"
 )
 
 func convert(path string) ([]byte, error) {
@@ -27,12 +27,12 @@ func convert(path string) ([]byte, error) {
 		return nil, errors.Wrapf(err, "unable to read trace from %v", path)
 	}
 
-	trace := model.Trace{}
+	trace := cnv.TraceInformation{}
 	err = json.Unmarshal(bts, &trace)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to parse trace")
 	}
-	bts, err = flame.Marshal(trace)
+	bts, err = flame.Marshal(trace.Traces[0])
 	if err != nil {
 		return nil, err
 	}
@@ -40,6 +40,7 @@ func convert(path string) ([]byte, error) {
 }
 
 func main() {
+	pp.WithLineInfo = true
 	tr, err := convert(os.Args[1])
 	if err != nil {
 		pp.Println(err)

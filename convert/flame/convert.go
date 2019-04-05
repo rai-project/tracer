@@ -55,7 +55,7 @@ func newConvertState(tr model.Trace) (*convertState, error) {
 		return nil, err
 	}
 
-	rootInterval, err := tree.FilterOnlyChildrenOf("PredictImage")
+	rootInterval, err := tree.FilterOnlyChildrenOf("PredictStep")
 	if err != nil {
 		return nil, err
 	}

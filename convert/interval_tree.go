@@ -29,13 +29,13 @@ func NewIntervalTreeFromTraceFile(path string) (*IntervalTree, error) {
 }
 
 func NewIntervalTreeFromTraceString(data string) (*IntervalTree, error) {
-	trace := model.Trace{}
+	trace := TraceInformation{}
 	bts := []byte(data)
 	err := json.Unmarshal(bts, &trace)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to parse trace")
 	}
-	return NewIntervalTree(trace)
+	return NewIntervalTree(trace.Traces[0])
 }
 
 func NewIntervalTree(trace model.Trace) (*IntervalTree, error) {
