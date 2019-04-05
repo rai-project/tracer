@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	opentracing "github.com/opentracing/opentracing-go"
+
 	"github.com/rai-project/config"
 
 	//machineinfo "github.com/rai-project/machine/info"
@@ -93,6 +94,7 @@ func (t *Tracer) Init(serviceName string) error {
 
 	// Adds support for injecting and extracting Zipkin B3 Propagation HTTP headers, for use with other Zipkin collectors.
 	zipkinPropagator := zpk.NewZipkinB3HTTPHeaderPropagator()
+	_ = zipkinPropagator
 
 	tracerOpts := []jaeger.TracerOption{
 		jaeger.TracerOptions.Tag("app", config.App.Name),
@@ -108,6 +110,7 @@ func (t *Tracer) Init(serviceName string) error {
 		jaeger.TracerOptions.Gen128Bit(true),
 		// Zipkin shares span ID between client and server spans; it must be enabled via the following option.
 		jaeger.TracerOptions.ZipkinSharedRPCSpan(true),
+		// jaeger.TracerOptions.PoolSpans(true),
 	}
 
 	//if machineinfo.Info != nil {
@@ -137,7 +140,8 @@ func (t *Tracer) Init(serviceName string) error {
 	tr, cl := jaeger.NewTracer(
 		serviceName,
 		jaeger.NewConstSampler(true /*sample all*/),
-		jaeger.NewRemoteReporter(trans),
+		jaeger.NewRemoteReporter(trans), // jaeger.ReporterOptions.Logger(log) jaeger.ReporterOptions.BufferFlushInterval(time.Second),
+
 		tracerOpts...,
 	)
 
