@@ -134,8 +134,11 @@ func (t *Tracer) Init(serviceName string) error {
 	tr, cl := jaeger.NewTracer(
 		serviceName,
 		jaeger.NewConstSampler(true /*sample all*/),
-		jaeger.NewRemoteReporter(trans), // jaeger.ReporterOptions.Logger(log) jaeger.ReporterOptions.BufferFlushInterval(time.Second),
-
+		jaeger.NewRemoteReporter(trans,
+			jaeger.ReporterOptions.QueueSize(5000),
+			// jaeger.ReporterOptions.Logger(log),
+			// jaeger.ReporterOptions.BufferFlushInterval(time.Second),
+		),
 		tracerOpts...,
 	)
 
