@@ -14,7 +14,15 @@ hunter_add_package(benchmark)
 
 find_package(benchmark CONFIG REQUIRED)
 
-set(CLibrary_dist_dir ${PROJECT_SOURCE_DIR}/../dist/MacOSX-x86-64)
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	set(SYSTEMID "Linux-x86-64")
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+	set(SYSTEMID "MacOSX-x86-64")
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+	set(SYSTEMID "Windows-x86-64")
+endif()
+
+set(CLibrary_dist_dir ${PROJECT_SOURCE_DIR}/../dist/${SYSTEMID})
 
 SET(CMAKE_FIND_LIBRARY_SUFFIXES .a .so .dylib)
 
@@ -24,6 +32,10 @@ target_include_directories(bench PUBLIC ${CLibrary_dist_dir})
 find_library(TRACER_LIBRARY rai_tracer HINTS ${CLibrary_dist_dir})
 message(STATUS "lib = ${TRACER_LIBRARY}")
 target_link_libraries(bench benchmark::benchmark ${TRACER_LIBRARY} pthread)
+if(SYSTEMID STREQUAL "Linux-x86-64")
+	find_library(NVML_LIBRARY nvidia-ml HINTS /usr/lib/x86_64-linux-gnu)
+	target_link_libraries(bench benchmark::benchmark ${NVML_LIBRARY})
+endif()
 if(APPLE)
   set(CMAKE_FIND_FRAMEWORK ONLY)
   find_library(CoreFoundation_LIBRARY CoreFoundation)
