@@ -11,19 +11,18 @@ import (
 
 func BenchmarkTracer(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		span := tracer.StartSpan( tracer.FULL_TRACE, "test_run")
+		span := tracer.StartSpan(tracer.FULL_TRACE, "test_run")
 		span.Finish()
 	}
-  tracer.Close()
+	tracer.Close()
 }
 
-
 func BenchmarkTracerWithContext(b *testing.B) {
-		ctx := context.Background()
+	ctx := context.Background()
 	for n := 0; n < b.N; n++ {
 		var span opentracing.Span
 		span, ctx = tracer.StartSpanFromContext(ctx, tracer.FULL_TRACE, "test_run")
 		span.Finish()
 	}
-  tracer.Close()
+	tracer.Close()
 }
