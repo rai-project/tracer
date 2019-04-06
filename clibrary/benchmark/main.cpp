@@ -29,7 +29,12 @@ static void BM_CTracerWithContext(benchmark::State &state) {
       ContextNewBackground(), APPLICATION_TRACE, (char *)"CTracerWithContext");
   auto span = spanctx.r0;
   auto ctx = spanctx.r1;
+  int ii = 0;
   for (auto _ : state) {
+    if (ii++ > 300) {
+      state.SkipWithError("limit");
+      break;
+    }
     SpanStartFromContext_return iter_spanctx =
         SpanStartFromContext(ctx, APPLICATION_TRACE, (char *)"iteration_ctx");
     auto iter_span = iter_spanctx.r0;

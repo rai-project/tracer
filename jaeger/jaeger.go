@@ -9,6 +9,10 @@ import (
 
 	//machineinfo "github.com/rai-project/machine/info"
 	opentracing "github.com/opentracing/opentracing-go"
+	jaeger "github.com/uber/jaeger-client-go"
+	"github.com/uber/jaeger-client-go/transport/zipkin"
+	zpk "github.com/uber/jaeger-client-go/zipkin"
+
 	"github.com/rai-project/config"
 	osinfo "github.com/rai-project/machine/os"
 	"github.com/rai-project/tracer"
@@ -16,9 +20,6 @@ import (
 	"github.com/rai-project/tracer/observer"
 	raiutils "github.com/rai-project/utils"
 	"github.com/rai-project/uuid"
-	jaeger "github.com/uber/jaeger-client-go"
-	"github.com/uber/jaeger-client-go/transport/zipkin"
-	zpk "github.com/uber/jaeger-client-go/zipkin"
 )
 
 type Tracer struct {
@@ -135,7 +136,7 @@ func (t *Tracer) Init(serviceName string) error {
 		serviceName,
 		jaeger.NewConstSampler(true /*sample all*/),
 		jaeger.NewRemoteReporter(trans,
-			jaeger.ReporterOptions.QueueSize(5000),
+			jaeger.ReporterOptions.QueueSize(10000),
 			// jaeger.ReporterOptions.Logger(log),
 			// jaeger.ReporterOptions.BufferFlushInterval(time.Second),
 		),
