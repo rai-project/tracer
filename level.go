@@ -23,3 +23,24 @@ func LevelFromName(s string) Level {
 	}
 	return lvl
 }
+
+func LevelToName(l Level) string {
+	switch l {
+	case NO_TRACE:
+		return "NO_TRACE"
+	case APPLICATION_TRACE:
+		return "APPLICATION_TRACE"
+	case MODEL_TRACE:
+		return "MODEL_TRACE"
+	case FRAMEWORK_TRACE:
+		return "FRAMEWORK_TRACE"
+	case LIBRARY_TRACE:
+		return "LIBRARY_TRACE"
+	case HARDWARE_TRACE:
+		return "HARDWARE_TRACE"
+	case FULL_TRACE:
+		return "FULL_TRACE"
+	default:
+		panic("unknow trace level")
+	}
+}
