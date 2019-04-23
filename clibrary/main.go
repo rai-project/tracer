@@ -40,7 +40,6 @@ func TracerClose() {
 
 //export TracerInit
 func TracerInit() {
-
 	log.Level = logrus.DebugLevel
 	config.AfterInit(func() {
 		log = logger.New().WithField("pkg", "tracer/clibrary")
@@ -53,9 +52,9 @@ func TracerInit() {
 		config.DebugMode(IsDebug),
 		config.VerboseMode(IsVerbose),
 	}
-	if IsDebug || IsVerbose {
-		pp.WithLineInfo = true
-	}
+
+  pp.WithLineInfo = true
+
 	if c, err := homedir.Expand(CfgFile); err == nil {
 		CfgFile = c
 	}
@@ -69,8 +68,6 @@ func TracerInit() {
   }
 
   config.Init(opts...)
-
-  pp.WithLineInfo = true
 }
 
 func main() {
