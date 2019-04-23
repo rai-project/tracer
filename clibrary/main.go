@@ -32,10 +32,8 @@ func TracerSetLevel(lvl int32) {
 
 //export TracerClose
 func TracerClose() {
-	if globalSpan != nil {
-		globalSpan.Finish()
-	}
-	tracer.Close()
+  libDeinit()
+  tracer.Close()
 }
 
 //export TracerInit
@@ -68,6 +66,8 @@ func TracerInit() {
   }
 
   config.Init(opts...)
+
+  libInit()
 }
 
 func main() {
