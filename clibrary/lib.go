@@ -18,6 +18,7 @@ import (
 	jaeger "github.com/uber/jaeger-client-go"
 	"gitlab.com/NebulousLabs/fastrand"
 
+	"github.com/k0kubun/pp"
 	"github.com/rai-project/tracer"
 	_ "github.com/rai-project/tracer/jaeger"
 	// _ "github.com/rai-project/tracer/noop"
@@ -40,8 +41,16 @@ var (
 	}
 	contexts = contextMap{
 		contexts: make(map[uintptr]context.Context),
-	}
+  }
+  globalSpan opentracing.Span
+  globalCtx context.Context
 )
+
+func init() {
+  ctx := context.Background()
+  globalSpan, globalCtx = tracer.StartSpanFromContext(ctx, tracer.LIBRARY_TRACE, "c_tracing")
+  contexts.contexts[0] = globalCtx
+}
 
 //go:nosplit
 func (s spanMap) Add(sp opentracing.Span) uintptr {
@@ -106,20 +115,32 @@ func SpanStart(lvl C.int32_t, cOperationName *C.char) uintptr {
 
 //export SpanStartFromContext
 func SpanStartFromContext(inCtx uintptr, lvl int32, cOperationName *C.char) (uintptr, uintptr) {
-	operationName := C.GoString(cOperationName)
+  operationName := C.GoString(cOperationName)
+  pp.Println(operationName)
 	sp, ctx := tracer.StartSpanFromContext(contexts.Get(inCtx), tracer.Level(lvl), operationName)
-	return spans.Add(sp), contexts.Add(ctx)
+  spPtr, ctxPtr := spans.Add(sp), contexts.Add(ctx)
+
+  pp.Println(spPtr, "  ", sp)
+
+  return spPtr, ctxPtr
 }
 
 //export SpanAddTag
 func SpanAddTag(spPtr uintptr, key *C.char, val *C.char) {
-	sp := spans.Get(spPtr)
+  sp := spans.Get(spPtr)
+  if sp == nil {
+    return
+  }
 	sp.SetTag(C.GoString(key), C.GoString(val))
 }
 
 //export SpanAddTags
 func SpanAddTags(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
-	sp := spans.Get(spPtr)
+  sp := spans.Get(spPtr)
+  pp.Println(sp)
+  if sp == nil {
+    return
+  }
 	keys := (*[1 << 28]*C.char)(unsafe.Pointer(ckeys))[:length:length]
 	vals := (*[1 << 28]*C.char)(unsafe.Pointer(cvals))[:length:length]
 	for ii := 0; ii < length; ii++ {
@@ -129,7 +150,11 @@ func SpanAddTags(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
 
 //export SpanAddArgumentsTag
 func SpanAddArgumentsTag(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
-	sp := spans.Get(spPtr)
+  sp := spans.Get(spPtr)
+  pp.Println(spPtr, "  ", sp)
+  if sp == nil {
+    return
+  }
 	keys := (*[1 << 28]*C.char)(unsafe.Pointer(ckeys))[:length:length]
 	vals := (*[1 << 28]*C.char)(unsafe.Pointer(cvals))[:length:length]
 	args := make(map[string]string, length)
@@ -141,7 +166,7 @@ func SpanAddArgumentsTag(spPtr uintptr, length int, ckeys **C.char, cvals **C.ch
 
 //export SpanFinish
 func SpanFinish(spPtr uintptr) {
-	sp := spans.Get(spPtr)
+  sp := spans.Get(spPtr)
 	if sp != nil {
 		sp.Finish()
 	}
@@ -150,7 +175,7 @@ func SpanFinish(spPtr uintptr) {
 
 //export SpanGetTraceID
 func SpanGetTraceID(spPtr uintptr) *C.char {
-	sp := spans.Get(spPtr)
+  sp := spans.Get(spPtr)
 	traceID := sp.Context().(jaeger.SpanContext).TraceID()
 	return C.CString(strconv.FormatUint(traceID.Low, 16))
 }

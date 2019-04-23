@@ -11,9 +11,10 @@ import (
 
 	"github.com/fatih/color"
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/sirupsen/logrus"
+
 	"github.com/rai-project/config"
 	"github.com/rai-project/logger"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -31,6 +32,9 @@ func TracerSetLevel(lvl int32) {
 
 //export TracerClose
 func TracerClose() {
+	if globalSpan != nil {
+		globalSpan.Finish()
+	}
 	tracer.Close()
 }
 
@@ -62,8 +66,11 @@ func TracerInit() {
 
 	if AppSecret != "" {
 		opts = append(opts, config.AppSecret(AppSecret))
-	}
-	config.Init(opts...)
+  }
+
+  config.Init(opts...)
+
+  pp.WithLineInfo = true
 }
 
 func main() {
