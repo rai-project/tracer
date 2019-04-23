@@ -120,8 +120,6 @@ func SpanStartFromContext(inCtx uintptr, lvl int32, cOperationName *C.char) (uin
 	sp, ctx := tracer.StartSpanFromContext(contexts.Get(inCtx), tracer.Level(lvl), operationName)
   spPtr, ctxPtr := spans.Add(sp), contexts.Add(ctx)
 
-  pp.Println(spPtr, "  ", sp)
-
   return spPtr, ctxPtr
 }
 
@@ -137,7 +135,6 @@ func SpanAddTag(spPtr uintptr, key *C.char, val *C.char) {
 //export SpanAddTags
 func SpanAddTags(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
   sp := spans.Get(spPtr)
-  pp.Println(sp)
   if sp == nil {
     return
   }
@@ -151,7 +148,6 @@ func SpanAddTags(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
 //export SpanAddArgumentsTag
 func SpanAddArgumentsTag(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
   sp := spans.Get(spPtr)
-  pp.Println(spPtr, "  ", sp)
   if sp == nil {
     return
   }
