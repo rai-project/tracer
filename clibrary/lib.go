@@ -182,6 +182,11 @@ func SpanAddTags(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
 	}
 }
 
+type Argument struct {
+	Name  string `json:"name,omitempty"`
+	Value string `json:"value,omitempty"`
+}
+
 //export SpanAddArgumentsTag
 func SpanAddArgumentsTag(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
 	sp := spans.Get(spPtr)
@@ -193,14 +198,17 @@ func SpanAddArgumentsTag(spPtr uintptr, length int, ckeys **C.char, cvals **C.ch
 	}
 	keys := (*[1 << 28]*C.char)(unsafe.Pointer(ckeys))[:length:length]
 	vals := (*[1 << 28]*C.char)(unsafe.Pointer(cvals))[:length:length]
-	args := make([][]string, length)
+	args := make([]Argument, length)
 	for ii := 0; ii < length; ii++ {
 		goKey := C.GoString(keys[ii])
 		goVal := C.GoString(vals[ii])
 		if false && goKey == "function_name" {
 			pp.Println(goVal)
 		}
-		args[ii] = []string{goKey, goVal}
+		args[ii] = Argument{
+      Name: goKey, 
+      Value: goVal,
+    }
 	}
 	bts, err := json.Marshal(args)
 	if err != nil {
