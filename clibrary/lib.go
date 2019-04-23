@@ -206,9 +206,9 @@ func SpanAddArgumentsTag(spPtr uintptr, length int, ckeys **C.char, cvals **C.ch
 			pp.Println(goVal)
 		}
 		args[ii] = Argument{
-      Name: goKey, 
-      Value: goVal,
-    }
+			Name:  goKey,
+			Value: goVal,
+		}
 	}
 	bts, err := json.Marshal(args)
 	if err != nil {
@@ -223,7 +223,14 @@ func SpanFinish(spPtr uintptr) {
 	if sp != nil {
 		sp.Finish()
 	}
-	spans.Delete(spPtr)
+}
+
+//export SpanDelete
+func SpanDelete(spPtr uintptr) {
+	sp := spans.Get(spPtr)
+	if sp != nil {
+		spans.Delete(spPtr)
+	}
 }
 
 //export SpanGetTraceID
