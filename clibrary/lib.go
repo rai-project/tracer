@@ -12,7 +12,9 @@ import (
 	"math"
 	"strconv"
 	"sync"
-	"unsafe"
+  "unsafe"
+  "encoding/json"
+  "fmt"
 
 	"github.com/opentracing/opentracing-go"
 	jaeger "github.com/uber/jaeger-client-go"
@@ -46,19 +48,41 @@ var (
   globalCtx context.Context
 )
 
-func init() {
-  ctx := context.Background()
-  globalSpan, globalCtx = tracer.StartSpanFromContext(ctx, tracer.LIBRARY_TRACE, "c_tracing")
-  contexts.contexts[0] = globalCtx
+func libInit() {
+  globalSpan, globalCtx = tracer.StartSpanFromContext(
+    context.Background(),
+    tracer.APPLICATION_TRACE,
+    "c_tracing",
+  )
+  pp.Println("init lib")
+}
+
+func libDeinit() {
+	if globalSpan != nil {
+		globalSpan.Finish()
+    pp.Println("closing global span")
+
+	traceID := globalSpan.Context().(jaeger.SpanContext).TraceID()
+	traceIDVal := traceID.String()
+
+  pp.Println(fmt.Sprintf("http://%s:16686/trace/%v", "192.17.102.10", traceIDVal))
+
+	}
 }
 
 //go:nosplit
 func (s spanMap) Add(sp opentracing.Span) uintptr {
-	id := uintptr(fastrand.Uint64n(math.MaxUint64))
+  for {
+    id := uintptr(fastrand.Uint64n(math.MaxUint64))
+    if _, ok := s.spans[id]; ok {
+      continue
+    }
 	s.Lock()
 	s.spans[id] = sp
-	s.Unlock()
+  s.Unlock()
 	return id
+  }
+  return 0
 }
 
 //go:nosplit
@@ -78,18 +102,24 @@ func (s spanMap) Delete(id uintptr) {
 
 //go:nosplit
 func (s contextMap) Add(ctx context.Context) uintptr {
-	id := uintptr(fastrand.Uint64n(math.MaxUint64))
-	s.Lock()
+  for {
+    id := uintptr(fastrand.Uint64n(math.MaxUint64))
+    if _, ok := s.contexts[id]; ok {
+      continue
+    }
+  s.Lock()
 	s.contexts[id] = ctx
 	s.Unlock()
-	return id
+  return id
+  }
+  return 0
 }
 
 //go:nosplit
 func (s contextMap) Get(id uintptr) context.Context {
-	if id == 0 {
-		return context.Background()
-	}
+  if id == 0 {
+    return globalCtx
+  }
 	s.Lock()
 	res := s.contexts[id]
 	s.Unlock()
@@ -116,7 +146,6 @@ func SpanStart(lvl C.int32_t, cOperationName *C.char) uintptr {
 //export SpanStartFromContext
 func SpanStartFromContext(inCtx uintptr, lvl int32, cOperationName *C.char) (uintptr, uintptr) {
   operationName := C.GoString(cOperationName)
-  pp.Println(operationName)
 	sp, ctx := tracer.StartSpanFromContext(contexts.Get(inCtx), tracer.Level(lvl), operationName)
   spPtr, ctxPtr := spans.Add(sp), contexts.Add(ctx)
 
@@ -141,7 +170,11 @@ func SpanAddTags(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
 	keys := (*[1 << 28]*C.char)(unsafe.Pointer(ckeys))[:length:length]
 	vals := (*[1 << 28]*C.char)(unsafe.Pointer(cvals))[:length:length]
 	for ii := 0; ii < length; ii++ {
-		sp.SetTag(C.GoString(keys[ii]), C.GoString(vals[ii]))
+goKey := C.GoString(keys[ii])
+goVal := C.GoString(vals[ii])
+if goKey == "function_name" {
+  pp.Println(goVal)
+}
 	}
 }
 
@@ -155,9 +188,18 @@ func SpanAddArgumentsTag(spPtr uintptr, length int, ckeys **C.char, cvals **C.ch
 	vals := (*[1 << 28]*C.char)(unsafe.Pointer(cvals))[:length:length]
 	args := make(map[string]string, length)
 	for ii := 0; ii < length; ii++ {
-		args[C.GoString(keys[ii])] = C.GoString(vals[ii])
-	}
-	sp.SetTag("arguments", args)
+goKey := C.GoString(keys[ii])
+goVal := C.GoString(vals[ii])
+if goKey == "function_name" {
+  pp.Println(goVal)
+}
+		args[goKey] = goVal
+  }
+  bts, err := json.Marshal(args)
+  if err != nil {
+    return
+  }
+	sp.SetTag("arguments", string(bts))
 }
 
 //export SpanFinish
