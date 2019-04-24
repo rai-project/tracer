@@ -11,14 +11,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
 	"strconv"
 	"sync"
+	"time"
 	"unsafe"
 
 	"github.com/opentracing/opentracing-go"
 	jaeger "github.com/uber/jaeger-client-go"
-	"gitlab.com/NebulousLabs/fastrand"
 
 	"github.com/k0kubun/pp"
 	"github.com/rai-project/tracer"
@@ -46,6 +45,9 @@ var (
 	}
 	globalSpan opentracing.Span
 	globalCtx  context.Context
+
+	spanCounter uintptr = 1
+	ctxCounter  uintptr = 1
 )
 
 func libInit() {
@@ -54,10 +56,11 @@ func libInit() {
 		tracer.APPLICATION_TRACE,
 		"c_tracing",
 	)
-	pp.Println("init lib")
+	// pp.Println("init lib")
 }
 
 func libDeinit() {
+	time.Sleep(time.Second)
 	if globalSpan != nil {
 		globalSpan.Finish()
 		pp.Println("closing global span")
@@ -72,14 +75,16 @@ func libDeinit() {
 
 //go:nosplit
 func (s spanMap) Add(sp opentracing.Span) uintptr {
+	s.Lock()
+	defer s.Unlock()
 	for {
-		id := uintptr(fastrand.Uint64n(math.MaxUint64))
+		// id := uintptr(fastrand.Uint64n(math.MaxUint64))
+		id := spanCounter
+		spanCounter++
 		if _, ok := s.spans[id]; ok {
 			continue
 		}
-		s.Lock()
 		s.spans[id] = sp
-		s.Unlock()
 		return id
 	}
 	return 0
@@ -102,14 +107,16 @@ func (s spanMap) Delete(id uintptr) {
 
 //go:nosplit
 func (s contextMap) Add(ctx context.Context) uintptr {
+	s.Lock()
+	defer s.Unlock()
 	for {
-		id := uintptr(fastrand.Uint64n(math.MaxUint64))
+		// id := uintptr(fastrand.Uint64n(math.MaxUint64))
+		id := ctxCounter
+		ctxCounter++
 		if _, ok := s.contexts[id]; ok {
 			continue
 		}
-		s.Lock()
 		s.contexts[id] = ctx
-		s.Unlock()
 		return id
 	}
 	return 0
@@ -165,9 +172,11 @@ func SpanAddTag(spPtr uintptr, key *C.char, val *C.char) {
 func SpanAddTags(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
 	sp := spans.Get(spPtr)
 	if sp == nil {
+		pp.Println("span is nil")
 		return
 	}
 	if length == 0 {
+		pp.Println("got no tags")
 		return
 	}
 	keys := (*[1 << 28]*C.char)(unsafe.Pointer(ckeys))[:length:length]
@@ -175,25 +184,27 @@ func SpanAddTags(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
 	for ii := 0; ii < length; ii++ {
 		goKey := C.GoString(keys[ii])
 		goVal := C.GoString(vals[ii])
-		if goKey == "function_name" {
-			pp.Println(goVal)
-		}
+		// if goKey == "function_name" {
+		// 	pp.Println(goVal)
+		// }
 		sp.SetTag(goKey, goVal)
 	}
 }
 
 type Argument struct {
-	Name  string `json:"name,omitempty"`
-	Value string `json:"value,omitempty"`
+	Name  string `json:"n,omitempty"`
+	Value string `json:"v,omitempty"`
 }
 
 //export SpanAddArgumentsTag
 func SpanAddArgumentsTag(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
 	sp := spans.Get(spPtr)
 	if sp == nil {
+		pp.Println("span is nil")
 		return
 	}
 	if length == 0 {
+		pp.Println("go no arguments")
 		return
 	}
 	keys := (*[1 << 28]*C.char)(unsafe.Pointer(ckeys))[:length:length]
@@ -202,9 +213,9 @@ func SpanAddArgumentsTag(spPtr uintptr, length int, ckeys **C.char, cvals **C.ch
 	for ii := 0; ii < length; ii++ {
 		goKey := C.GoString(keys[ii])
 		goVal := C.GoString(vals[ii])
-		if false && goKey == "function_name" {
-			pp.Println(goVal)
-		}
+		// if false && goKey == "function_name" {
+		// 	pp.Println(goVal)
+		// }
 		args[ii] = Argument{
 			Name:  goKey,
 			Value: goVal,
@@ -223,6 +234,7 @@ func SpanFinish(spPtr uintptr) {
 	if sp != nil {
 		sp.Finish()
 	}
+	time.Sleep(100 * time.Microsecond)
 }
 
 //export SpanDelete
