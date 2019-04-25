@@ -26,6 +26,7 @@ import (
 	"github.com/rai-project/go-cupti"
 	"github.com/rai-project/tracer"
 	_ "github.com/rai-project/tracer/jaeger"
+	"github.com/rai-project/utils"
 	// _ "github.com/rai-project/tracer/noop"
 	// _ "github.com/rai-project/tracer/zipkin"
 )
@@ -74,9 +75,11 @@ func initCupti() {
 		return
 	}
 
+	pp.Println("initializing cupti")
+
 	cu, err := cupti.New(cupti.Context(globalCtx), cupti.SamplingPeriod(0))
 	if err != nil {
-		panic(Err)
+		panic(err)
 	}
 	cuptiInstance = cu
 }
@@ -98,6 +101,7 @@ func libInit() {
 }
 
 func libDeinit() {
+	pp.Println("deinit")
 	deinitCupti()
 	if globalSpan != nil {
 		globalSpan.Finish()
@@ -106,7 +110,8 @@ func libDeinit() {
 		traceID := globalSpan.Context().(jaeger.SpanContext).TraceID()
 		traceIDVal := traceID.String()
 
-		pp.Println(fmt.Sprintf("http://%s:16686/trace/%v", "192.17.102.10", traceIDVal))
+		ip, _ := utils.GetExternalIp()
+		pp.Println(fmt.Sprintf("http://%s:16686/trace/%v", ip, traceIDVal))
 
 	}
 }
