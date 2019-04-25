@@ -1,6 +1,6 @@
 package main
 
-// #include <stdlib.h>
+// #include <stdint.h>
 // #cgo CFLAGS: -fPIC -O3
 import (
 	"C"
@@ -74,7 +74,7 @@ func initCupti() {
 		return
 	}
 
-	cu, err := cupti.New(cupti.Context(ctx), cupti.SamplingPeriod(0))
+	cu, err := cupti.New(cupti.Context(globalCtx), cupti.SamplingPeriod(0))
 	if err != nil {
 		panic(Err)
 	}
