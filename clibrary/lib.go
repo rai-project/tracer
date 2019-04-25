@@ -1,7 +1,6 @@
 package main
 
 // #include <stdlib.h>
-// #include <stdlib.h>
 // #cgo CFLAGS: -fPIC -O3
 import (
 	"C"
@@ -14,8 +13,8 @@ import (
 	"math"
 	"os"
 	"runtime"
-	"strconv"
 	"sync"
+	"time"
 	"unsafe"
 
 	"github.com/opentracing/opentracing-go"
@@ -31,25 +30,38 @@ import (
 	// _ "github.com/rai-project/tracer/zipkin"
 )
 
+type spanInfo struct {
+	ctx           context.Context
+	level         tracer.Level
+	operationName string
+	startTime     time.Time
+	endTime       time.Time
+	tags          opentracing.Tags
+}
+
 type spanMap struct {
-	spans map[uintptr]opentracing.Span
-	sync.Mutex
+	spans map[uintptr]*spanInfo
+	sync.RWMutex
 }
 
 type contextMap struct {
 	contexts map[uintptr]context.Context
-	sync.Mutex
+	sync.RWMutex
 }
 
 var (
-	spans = spanMap{
-		spans: make(map[uintptr]opentracing.Span),
+	spans = &spanMap{
+		spans: make(map[uintptr]*spanInfo),
 	}
-	contexts = contextMap{
+	contexts = &contextMap{
 		contexts: make(map[uintptr]context.Context),
 	}
-	globalSpan    opentracing.Span
-	globalCtx     context.Context
+	globalSpan opentracing.Span
+	globalCtx  context.Context
+
+	spanCounter uintptr = 1
+	ctxCounter  uintptr = 1
+
 	cuptiInstance *cupti.CUPTI
 )
 
@@ -100,63 +112,65 @@ func libDeinit() {
 }
 
 //go:nosplit
-func (s spanMap) Add(sp opentracing.Span) uintptr {
+func (s *spanMap) Add(sp *spanInfo) uintptr {
+	s.Lock()
+	defer s.Unlock()
 	for {
 		id := uintptr(fastrand.Uint64n(math.MaxUint64))
 		if _, ok := s.spans[id]; ok {
 			continue
 		}
-		s.Lock()
 		s.spans[id] = sp
-		s.Unlock()
 		return id
 	}
 	return 0
 }
 
 //go:nosplit
-func (s spanMap) Get(id uintptr) opentracing.Span {
-	s.Lock()
+func (s *spanMap) Get(id uintptr) *spanInfo {
+	s.RLock()
 	res := s.spans[id]
-	s.Unlock()
+	s.RUnlock()
 	return res
 }
 
 //go:nosplit
-func (s spanMap) Delete(id uintptr) {
+func (s *spanMap) Delete(id uintptr) {
 	s.Lock()
 	delete(s.spans, id)
 	s.Unlock()
 }
 
 //go:nosplit
-func (s contextMap) Add(ctx context.Context) uintptr {
+func (s *contextMap) Add(ctx context.Context) uintptr {
+	s.Lock()
+	defer s.Unlock()
 	for {
-		id := uintptr(fastrand.Uint64n(math.MaxUint64))
+		// id := uintptr(fastrand.Uint64n(math.MaxUint64))
+		id := ctxCounter
+		ctxCounter++
 		if _, ok := s.contexts[id]; ok {
 			continue
 		}
-		s.Lock()
 		s.contexts[id] = ctx
-		s.Unlock()
 		return id
 	}
 	return 0
 }
 
 //go:nosplit
-func (s contextMap) Get(id uintptr) context.Context {
+func (s *contextMap) Get(id uintptr) context.Context {
 	if id == 0 {
 		return globalCtx
 	}
-	s.Lock()
+	s.RLock()
 	res := s.contexts[id]
-	s.Unlock()
+	s.RUnlock()
 	return res
 }
 
 //go:nosplit
-func (s contextMap) Delete(id uintptr) {
+func (s *contextMap) Delete(id uintptr) {
 	if id == 0 {
 		return
 	}
@@ -167,18 +181,34 @@ func (s contextMap) Delete(id uintptr) {
 
 //export SpanStart
 func SpanStart(lvl C.int32_t, cOperationName *C.char) uintptr {
+	now := time.Now()
 	operationName := C.GoString(cOperationName)
-	sp := tracer.StartSpan(tracer.Level(lvl), operationName)
-	return spans.Add(sp)
+	sp := &spanInfo{
+		ctx:           contexts.Get(0),
+		level:         tracer.Level(lvl),
+		operationName: operationName,
+		startTime:     now,
+		tags:          opentracing.Tags{},
+	}
+	spPtr := spans.Add(sp)
+
+	return spPtr
 }
 
 //export SpanStartFromContext
 func SpanStartFromContext(inCtx uintptr, lvl int32, cOperationName *C.char) (uintptr, uintptr) {
+	now := time.Now()
 	operationName := C.GoString(cOperationName)
-	sp, ctx := tracer.StartSpanFromContext(contexts.Get(inCtx), tracer.Level(lvl), operationName)
-	spPtr, ctxPtr := spans.Add(sp), contexts.Add(ctx)
+	sp := &spanInfo{
+		ctx:           contexts.Get(inCtx),
+		level:         tracer.Level(lvl),
+		operationName: operationName,
+		startTime:     now,
+		tags:          opentracing.Tags{},
+	}
+	spPtr := spans.Add(sp)
 
-	return spPtr, ctxPtr
+	return spPtr, 0
 }
 
 //export SpanAddTag
@@ -187,16 +217,18 @@ func SpanAddTag(spPtr uintptr, key *C.char, val *C.char) {
 	if sp == nil {
 		return
 	}
-	sp.SetTag(C.GoString(key), C.GoString(val))
+	sp.tags[C.GoString(key)] = C.GoString(val)
 }
 
 //export SpanAddTags
 func SpanAddTags(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
 	sp := spans.Get(spPtr)
 	if sp == nil {
+		pp.Println("span is nil")
 		return
 	}
 	if length == 0 {
+		pp.Println("got no tags")
 		return
 	}
 	keys := (*[1 << 28]*C.char)(unsafe.Pointer(ckeys))[:length:length]
@@ -204,22 +236,23 @@ func SpanAddTags(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
 	for ii := 0; ii < length; ii++ {
 		goKey := C.GoString(keys[ii])
 		goVal := C.GoString(vals[ii])
-		if goKey == "function_name" {
-			pp.Println(goVal)
-		}
-		sp.SetTag(goKey, goVal)
+		// if goKey == "function_name" {
+		// 	pp.Println(goVal)
+		// }
+		sp.tags[goKey] = goVal
 	}
 }
 
 type Argument struct {
-	Name  string `json:"name,omitempty"`
-	Value string `json:"value,omitempty"`
+	Name  string `json:"n,omitempty"`
+	Value string `json:"v,omitempty"`
 }
 
 //export SpanAddArgumentsTag
 func SpanAddArgumentsTag(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
 	sp := spans.Get(spPtr)
 	if sp == nil {
+		pp.Println("span is nil")
 		return
 	}
 	if length == 0 {
@@ -231,9 +264,9 @@ func SpanAddArgumentsTag(spPtr uintptr, length int, ckeys **C.char, cvals **C.ch
 	for ii := 0; ii < length; ii++ {
 		goKey := C.GoString(keys[ii])
 		goVal := C.GoString(vals[ii])
-		if false && goKey == "function_name" {
-			pp.Println(goVal)
-		}
+		// if false && goKey == "function_name" {
+		// 	pp.Println(goVal)
+		// }
 		args[ii] = Argument{
 			Name:  goKey,
 			Value: goVal,
@@ -243,14 +276,14 @@ func SpanAddArgumentsTag(spPtr uintptr, length int, ckeys **C.char, cvals **C.ch
 	if err != nil {
 		return
 	}
-	sp.SetTag("arguments", string(bts))
+	sp.tags["arguments"] = string(bts)
 }
 
 //export SpanFinish
 func SpanFinish(spPtr uintptr) {
 	sp := spans.Get(spPtr)
 	if sp != nil {
-		sp.Finish()
+		sp.endTime = time.Now()
 	}
 }
 
@@ -258,15 +291,26 @@ func SpanFinish(spPtr uintptr) {
 func SpanDelete(spPtr uintptr) {
 	sp := spans.Get(spPtr)
 	if sp != nil {
+		span, _ := tracer.StartSpanFromContext(
+			sp.ctx,
+			sp.level,
+			sp.operationName,
+			opentracing.StartTime(sp.startTime),
+			sp.tags,
+		)
+		span.FinishWithOptions(opentracing.FinishOptions{
+			FinishTime: sp.endTime,
+		})
 		spans.Delete(spPtr)
 	}
 }
 
 //export SpanGetTraceID
 func SpanGetTraceID(spPtr uintptr) *C.char {
-	sp := spans.Get(spPtr)
-	traceID := sp.Context().(jaeger.SpanContext).TraceID()
-	return C.CString(strconv.FormatUint(traceID.Low, 16))
+	// sp := spans.Get(spPtr)
+	// traceID := sp.Context().(jaeger.SpanContext).TraceID()
+	// return C.CString(strconv.FormatUint(traceID.Low, 16))
+	return nil
 }
 
 //export ContextNewBackground
