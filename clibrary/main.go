@@ -32,8 +32,8 @@ func TracerSetLevel(lvl int32) {
 
 //export TracerClose
 func TracerClose() {
-  libDeinit()
-  tracer.Close()
+	libDeinit()
+	tracer.Close()
 }
 
 //export TracerInit
@@ -51,7 +51,7 @@ func TracerInit() {
 		config.VerboseMode(IsVerbose),
 	}
 
-  pp.WithLineInfo = true
+	pp.WithLineInfo = true
 
 	if c, err := homedir.Expand(CfgFile); err == nil {
 		CfgFile = c
@@ -63,11 +63,12 @@ func TracerInit() {
 
 	if AppSecret != "" {
 		opts = append(opts, config.AppSecret(AppSecret))
-  }
+	}
 
-  config.Init(opts...)
+	config.Init(opts...)
 
-  libInit()
+	tracer.SetLevel(tracer.FULL_TRACE)
+	libInit()
 }
 
 func main() {
