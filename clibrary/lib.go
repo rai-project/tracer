@@ -52,16 +52,13 @@ type contextMap struct {
 
 var (
 	spans = &spanMap{
-		spans: make(map[uintptr]*spanInfo),
+		spans: map[uintptr]*spanInfo{},
 	}
 	contexts = &contextMap{
-		contexts: make(map[uintptr]context.Context),
+		contexts: map[uintptr]context.Context{},
 	}
 	globalSpan opentracing.Span
 	globalCtx  context.Context
-
-	spanCounter uintptr = 1
-	ctxCounter  uintptr = 1
 
 	cuptiInstance *cupti.CUPTI
 )
@@ -120,6 +117,9 @@ func libDeinit() {
 func (s *spanMap) Add(sp *spanInfo) uintptr {
 	s.Lock()
 	defer s.Unlock()
+	if s.spans == nil {
+		s.spans = map[uintptr]*spanInfo{}
+	}
 	for {
 		id := uintptr(fastrand.Uint64n(math.MaxUint64))
 		if _, ok := s.spans[id]; ok {
@@ -151,9 +151,7 @@ func (s *contextMap) Add(ctx context.Context) uintptr {
 	s.Lock()
 	defer s.Unlock()
 	for {
-		// id := uintptr(fastrand.Uint64n(math.MaxUint64))
-		id := ctxCounter
-		ctxCounter++
+		id := uintptr(fastrand.Uint64n(math.MaxUint64))
 		if _, ok := s.contexts[id]; ok {
 			continue
 		}
