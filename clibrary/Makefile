@@ -52,7 +52,7 @@ setup:
 	mkdir -p dist/MacOSX-x86-64/
 	mkdir -p dist/Windows-x86-64/
 
-$(RAI_TRACER_LIB_OUTPUT)-macosx: $(GOFILES_NOVENDOR)
+$(RAI_TRACER_LIB_OUTPUT)-darwin: $(GOFILES_NOVENDOR)
 	@echo -n ">> CROSSCOMPILE darwin GOOS=darwin GOARCH=amd64 $(CGO_CFLAGS) $(GO) build -v -o dist/MacOSX-x86-64/lib$(RAI_TRACER_LIB_OUTPUT).$(RAI_TRACER_STATIC_LIB_SUFFIX) $(BUILDSTATICFLAGS) $^"
 	@GOOS=darwin GOARCH=amd64 $(CGO_CFLAGS) $(GO) build -o dist/MacOSX-x86-64/lib$(RAI_TRACER_LIB_OUTPUT).$(RAI_TRACER_STATIC_LIB_SUFFIX) $(BUILDSTATICFLAGS) $^
 
