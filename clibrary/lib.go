@@ -73,7 +73,9 @@ func initCupti() {
 		return
 	}
 
-	pp.Println("initializing cupti")
+	if false {
+		pp.Println("initializing cupti")
+	}
 
 	cu, err := cupti.New(cupti.Context(globalCtx), cupti.SamplingPeriod(0))
 	if err != nil {
@@ -99,7 +101,9 @@ func libInit() {
 }
 
 func libDeinit() {
-	pp.Println("deinit")
+  if false {
+  pp.Println("deinit")
+  }
 	deinitCupti()
 	if globalSpan != nil {
 		globalSpan.Finish()
