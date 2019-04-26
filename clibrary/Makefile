@@ -17,7 +17,7 @@ PWD                       := $(shell pwd)
 PREFIX                    ?= $(GOPATH)
 BINDIR                    ?= $(PREFIX)/bin
 GO                        := go
-CGO_CFLAGS                := 
+CGO_CFLAGS                :=
 GOOS                      ?= $(shell go version | cut -d' ' -f4 | cut -d'/' -f1)
 GOARCH                    ?= $(shell go version | cut -d' ' -f4 | cut -d'/' -f2)
 
@@ -63,8 +63,8 @@ $(RAI_TRACER_LIB_OUTPUT)-macosx: $(GOFILES_NOVENDOR)
 $(RAI_TRACER_LIB_OUTPUT)-linux: $(GOFILES_NOVENDOR)
 	@echo -n ">> CROSSCOMPILE linux GOOS=linux GOARCH=amd64 $(CGO_CFLAGS) $(GO) build -v -o dist/Linux-x86-64/lib$(RAI_TRACER_LIB_OUTPUT).$(RAI_TRACER_STATIC_LIB_SUFFIX) $(BUILDSTATICFLAGS) $^"
 	@GOOS=linux GOARCH=amd64 $(CGO_CFLAGS) $(GO) build -o dist/Linux-x86-64/lib$(RAI_TRACER_LIB_OUTPUT).$(RAI_TRACER_STATIC_LIB_SUFFIX) $(BUILDSTATICFLAGS) $^
-	#@echo -n ">> CROSSCOMPILE linux GOOS=linux GOARCH=amd64 $(CGO_CFLAGS) $(GO) build -v -o dist/Linux-x86-64/lib$(RAI_TRACER_LIB_OUTPUT).$(RAI_TRACER_SHARED_LIB_SUFFIX) $(BUILDSHAREDFLAGS) $^"
-	#@GOOS=linux GOARCH=amd64 $(GO) build -o dist/Linux-x86-64/lib$(RAI_TRACER_LIB_OUTPUT).$(RAI_TRACER_SHARED_LIB_SUFFIX) $(BUILDSHAREDFLAGS) $^
+	# @echo -n ">> CROSSCOMPILE linux GOOS=linux GOARCH=amd64 $(CGO_CFLAGS) $(GO) build -v -o dist/Linux-x86-64/lib$(RAI_TRACER_LIB_OUTPUT).$(RAI_TRACER_SHARED_LIB_SUFFIX) $(BUILDSHAREDFLAGS) $^"
+	# @GOOS=linux GOARCH=amd64 $(GO) build -o dist/Linux-x86-64/lib$(RAI_TRACER_LIB_OUTPUT).$(RAI_TRACER_SHARED_LIB_SUFFIX) $(BUILDSHAREDFLAGS) $^
 	@printf '%s\n' '$(OK)'
 
 $(RAI_TRACER_LIB_OUTPUT)-windows: $(GOFILES_NOVENDOR)

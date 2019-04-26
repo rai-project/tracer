@@ -4,6 +4,7 @@ import "C"
 
 import (
 	"path/filepath"
+	"sync"
 
 	"github.com/rai-project/tracer"
 
@@ -18,11 +19,12 @@ import (
 )
 
 var (
-	IsDebug   bool
-	IsVerbose bool
-	AppSecret string
-	CfgFile   string
-	log       *logrus.Entry = logrus.New().WithField("pkg", "tracer/clibrary")
+	IsDebug        bool
+	IsVerbose      bool
+	AppSecret      string
+	CfgFile        string
+	tracerInitOnce sync.Once
+	log            *logrus.Entry = logrus.New().WithField("pkg", "tracer/clibrary")
 )
 
 //export TracerSetLevel
@@ -38,6 +40,10 @@ func TracerClose() {
 
 //export TracerInit
 func TracerInit() {
+	tracerInitOnce.Do(doTracerInit)
+}
+
+func doTracerInit() {
 	log.Level = logrus.DebugLevel
 	config.AfterInit(func() {
 		log = logger.New().WithField("pkg", "tracer/clibrary")
@@ -69,6 +75,10 @@ func TracerInit() {
 
 	tracer.SetLevel(tracer.FULL_TRACE)
 	libInit()
+}
+
+func initLib() {
+	TracerInit()
 }
 
 func main() {

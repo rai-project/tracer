@@ -13,6 +13,7 @@ import (
 	"math"
 	"os"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
 	"unsafe"
@@ -184,6 +185,7 @@ func (s *contextMap) Delete(id uintptr) {
 
 //export SpanStart
 func SpanStart(lvl C.int32_t, cOperationName *C.char) uintptr {
+	initLib()
 	now := time.Now()
 	operationName := C.GoString(cOperationName)
 	sp := &spanInfo{
@@ -200,6 +202,7 @@ func SpanStart(lvl C.int32_t, cOperationName *C.char) uintptr {
 
 //export SpanStartFromContext
 func SpanStartFromContext(inCtx uintptr, lvl int32, cOperationName *C.char) (uintptr, uintptr) {
+	initLib()
 	now := time.Now()
 	operationName := C.GoString(cOperationName)
 	sp := &spanInfo{
@@ -246,13 +249,33 @@ func SpanAddTags(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
 	}
 }
 
+//export SpanAddArgumentsTag
+func SpanAddArgumentsTag(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
+	sp := spans.Get(spPtr)
+	if sp == nil {
+		pp.Println("span is nil")
+		return
+	}
+	if length == 0 {
+		return
+	}
+	keys := (*[1 << 28]*C.char)(unsafe.Pointer(ckeys))[:length:length]
+	vals := (*[1 << 28]*C.char)(unsafe.Pointer(cvals))[:length:length]
+	// args := make([]Argument, length)
+	for ii := 0; ii < length; ii++ {
+		goKey := C.GoString(keys[ii])
+		goVal := C.GoString(vals[ii])
+		sp.tags["argument/"+strconv.Itoa(ii)+"/"+goKey] = goVal
+	}
+}
+
 type Argument struct {
 	Name  string `json:"n,omitempty"`
 	Value string `json:"v,omitempty"`
 }
 
-//export SpanAddArgumentsTag
-func SpanAddArgumentsTag(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
+//export SpanAddArgumentsTagJSON
+func SpanAddArgumentsTagJSON(spPtr uintptr, length int, ckeys **C.char, cvals **C.char) {
 	sp := spans.Get(spPtr)
 	if sp == nil {
 		pp.Println("span is nil")
@@ -267,9 +290,6 @@ func SpanAddArgumentsTag(spPtr uintptr, length int, ckeys **C.char, cvals **C.ch
 	for ii := 0; ii < length; ii++ {
 		goKey := C.GoString(keys[ii])
 		goVal := C.GoString(vals[ii])
-		// if false && goKey == "function_name" {
-		// 	pp.Println(goVal)
-		// }
 		args[ii] = Argument{
 			Name:  goKey,
 			Value: goVal,
@@ -301,6 +321,10 @@ func SpanDelete(spPtr uintptr) {
 			opentracing.StartTime(sp.startTime),
 			sp.tags,
 		)
+		if span == nil {
+			pp.Println("nil span")
+			return
+		}
 		span.FinishWithOptions(opentracing.FinishOptions{
 			FinishTime: sp.endTime,
 		})
