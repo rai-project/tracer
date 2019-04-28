@@ -106,7 +106,7 @@ func libInit() {
 	globalSpan, globalCtx = tracer.StartSpanFromContext(
 		globalCtx,
 		tracer.APPLICATION_TRACE,
-		"c_tracing",
+		"api_tracing",
 		extraOpts...,
 	)
 
@@ -135,7 +135,7 @@ func libDeinit() {
 
 		ip, _ := utils.GetExternalIp()
 		pp.Println(fmt.Sprintf("http://%s:16686/trace/%v", ip, traceIDVal))
-
+		globalSpan = nil
 	}
 }
 
