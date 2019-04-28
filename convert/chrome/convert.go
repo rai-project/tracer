@@ -49,7 +49,7 @@ func newConvertState(tr model.Trace) (*convertState, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = tree.FilterOnlyChildrenOf("evaluate_predictions")
+	_, err = tree.FilterOnlyChildrenOf("c_tracing")
 	if err != nil {
 		return nil, err
 	}
