@@ -11,20 +11,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"os"
-	"runtime"
 	"strconv"
 	"sync"
 	"time"
 	"unsafe"
 
 	"github.com/opentracing/opentracing-go"
-	"github.com/spf13/cast"
 	jaeger "github.com/uber/jaeger-client-go"
 	"gitlab.com/NebulousLabs/fastrand"
 
 	"github.com/k0kubun/pp"
-	"github.com/rai-project/go-cupti"
 	"github.com/rai-project/tracer"
 	_ "github.com/rai-project/tracer/jaeger"
 	"github.com/rai-project/utils"
@@ -60,38 +56,10 @@ var (
 	}
 	globalSpan opentracing.Span
 	globalCtx  context.Context
-
-	cuptiInstance *cupti.CUPTI
 )
 
-func initCupti() {
-	if runtime.GOOS != "linux" {
-		return
-	}
-	enableCupti := cast.ToBool(os.Getenv("CUPTI_TRACE")) || cast.ToBool(os.Getenv("CUDA_TRACE"))
-	if !enableCupti {
-		return
-	}
-
-	if false {
-		pp.Println("initializing cupti")
-	}
-
-	cu, err := cupti.New(cupti.Context(globalCtx), cupti.SamplingPeriod(0))
-	if err != nil {
-		panic(err)
-	}
-	cuptiInstance = cu
-}
-
-func deinitCupti() {
-	if cuptiInstance == nil {
-		return
-	}
-	cuptiInstance.Close()
-}
-
 func libInit() {
+	// pp.Println("initializing library2")
 	globalSpan, globalCtx = tracer.StartSpanFromContext(
 		context.Background(),
 		tracer.APPLICATION_TRACE,
@@ -101,9 +69,9 @@ func libInit() {
 }
 
 func libDeinit() {
-  if false {
-  pp.Println("deinit")
-  }
+	if false {
+		pp.Println("deinit")
+	}
 	deinitCupti()
 	if globalSpan != nil {
 		globalSpan.Finish()
@@ -209,6 +177,7 @@ func SpanStartFromContext(inCtx uintptr, lvl int32, cOperationName *C.char) (uin
 	initLib()
 	now := time.Now()
 	operationName := C.GoString(cOperationName)
+	// pp.Println("starting span  ", operationName)
 	sp := &spanInfo{
 		ctx:           contexts.Get(inCtx),
 		level:         tracer.Level(lvl),
