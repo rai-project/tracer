@@ -33,7 +33,7 @@ type Tracer struct {
 	level       tracer.Level
 }
 
-func New(serviceName string) (tracer.Tracer, error) {
+func New(serviceName string, opts ...tracer.Option) (tracer.Tracer, error) {
 	tracer := &Tracer{
 		level: Config.Level,
 	}
@@ -56,7 +56,7 @@ func (t *Tracer) SetLevel(lvl tracer.Level) {
 	t.level = lvl
 }
 
-func (t *Tracer) Init(serviceName string) error {
+func (t *Tracer) Init(serviceName string, opts ...tracer.Option) error {
 	if t.initialized {
 		return nil
 	}
@@ -107,6 +107,8 @@ func (t *Tracer) Init(serviceName string) error {
 		jaeger.TracerOptions.ZipkinSharedRPCSpan(true),
 		// jaeger.TracerOptions.PoolSpans(true),
 	}
+
+	tracerOpts = append(tracerOpts, opts...)
 
 	//if machineinfo.Info != nil {
 	//	buf := new(bytes.Buffer)

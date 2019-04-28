@@ -26,9 +26,9 @@ func neverSample(_ uint64) bool { return false }
 
 func alwaysSample(_ uint64) bool { return true }
 
-func New(serviceName string) (tracer.Tracer, error) {
+func New(serviceName string, opts ...tracer.Option) (tracer.Tracer, error) {
 	tracer := &Tracer{}
-	err := tracer.Init(serviceName)
+	err := tracer.Init(serviceName, opts...)
 	if err != nil {
 		return nil, nil
 	}
@@ -47,7 +47,7 @@ func (t *Tracer) SetLevel(lvl tracer.Level) {
 	t.level = lvl
 }
 
-func (t *Tracer) Init(serviceName string) error {
+func (t *Tracer) Init(serviceName string, opts ...tracer.Option) error {
 	if t.initialized {
 		return nil
 	}

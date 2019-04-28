@@ -3,10 +3,16 @@ package main
 import "C"
 
 import (
+	"context"
+	"fmt"
+	"os"
 	"path/filepath"
 	"sync"
 
+	"github.com/opentracing/opentracing-go"
 	"github.com/rai-project/tracer"
+	"github.com/rai-project/utils"
+	jaeger "github.com/uber/jaeger-client-go"
 
 	"github.com/k0kubun/pp"
 
@@ -74,12 +80,53 @@ func doTracerInit() {
 
 	config.Init(opts...)
 
+	tracer.ResetStd(
+		TracerOptions.Injector(opentracing.HTTPHeaders, NewEnvPropagator(BaggagePrefix("rai:)"))),
+		TracerOptions.Extractor(opentracing.HTTPHeaders, NewEnvPropagator(BaggagePrefix("rai:)"))),
+	)
+
 	tracer.SetLevel(tracer.FULL_TRACE)
 	libInit()
 }
 
 func initLib() {
 	TracerInit()
+}
+
+func libInit() {
+	// pp.Println("initializing library2")
+	globalSpan, globalCtx = tracer.StartSpanFromContext(
+		context.Background(),
+		tracer.APPLICATION_TRACE,
+		"c_tracing",
+	)
+
+	traceID := globalSpan.Context().(jaeger.SpanContext).TraceID()
+	traceIDVal := traceID.String()
+
+	tracer.Inject(globalSpan.Context(), envPropagatorName, traceIDVal)
+
+	os.Setenv(envPropagatorName+"_trace_id", traceIDVal)
+
+	initCupti()
+}
+
+func libDeinit() {
+	if false {
+		pp.Println("deinit")
+	}
+	deinitCupti()
+	if globalSpan != nil {
+		globalSpan.Finish()
+		pp.Println("closing global span")
+
+		traceID := globalSpan.Context().(jaeger.SpanContext).TraceID()
+		traceIDVal := traceID.String()
+
+		ip, _ := utils.GetExternalIp()
+		pp.Println(fmt.Sprintf("http://%s:16686/trace/%v", ip, traceIDVal))
+
+	}
 }
 
 func main() {

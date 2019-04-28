@@ -12,7 +12,7 @@ type Tracer interface {
 	ID() string
 	StartSpanFromContext(ctx context.Context, operationName string, opts ...opentracing.StartSpanOption) (opentracing.Span, context.Context)
 	io.Closer
-	Init(serviceName string) error
+	Init(serviceName string, opts ...Option) error
 	Name() string
 	Level() Level
 	SetLevel(Level)

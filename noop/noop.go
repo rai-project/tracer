@@ -14,7 +14,7 @@ type Tracer struct {
 	level tracer.Level
 }
 
-func New(serviceName string) (tracer.Tracer, error) {
+func New(serviceName string, opts ...tracer.Option) (tracer.Tracer, error) {
 	return &Tracer{
 		NoopTracer: opentracing.NoopTracer{},
 		id:         uuid.NewV4(),
@@ -33,7 +33,7 @@ func (t *Tracer) SetLevel(lvl tracer.Level) {
 	t.level = lvl
 }
 
-func (*Tracer) Init(_ string) error {
+func (*Tracer) Init(_ string, opts ...tracer.Option) error {
 	return nil
 }
 

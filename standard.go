@@ -27,11 +27,11 @@ func Std() Tracer {
 	return stdTracer
 }
 
-func ResetStd() Tracer {
+func ResetStd(options ...Option) Tracer {
 	if stdTracer != nil {
 		stdTracer.Close()
 	}
-	std, err := New(config.App.Name)
+	std, err := New(config.App.Name, options...)
 	if err != nil {
 		SetStd(noop)
 		return nil
@@ -40,20 +40,20 @@ func ResetStd() Tracer {
 	return std
 }
 
-func New(serviceName string) (Tracer, error) {
+func New(serviceName string, options ...Option) (Tracer, error) {
 	backendName := Config.Provider
 	if backendName == "" || !Config.Enabled {
 		backendName = "noop"
 	}
-	return NewFromName(serviceName, backendName)
+	return NewFromName(serviceName, backendName, options...)
 }
 
-func MustNew(serviceName string) Tracer {
+func MustNew(serviceName string, options ...Option) Tracer {
 	backendName := Config.Provider
 	if backendName == "" || !Config.Enabled {
 		backendName = "noop"
 	}
-	tr, err := NewFromName(serviceName, backendName)
+	tr, err := NewFromName(serviceName, backendName, options...)
 	if err != nil {
 		// just use the noop tracer
 		tr, err = NewFromName(serviceName, "noop")

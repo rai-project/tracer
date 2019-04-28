@@ -1,7 +1,9 @@
+//+build !linux nocupti
+
 package main
 
-// func initCupti() {
-// }
+func initCupti() {
+}
 
-// func deinitCupti() {
-// }
+func deinitCupti() {
+}

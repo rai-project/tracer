@@ -1,3 +1,5 @@
+//+build linux,!nocupti
+
 package main
 
 import (
