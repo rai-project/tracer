@@ -114,6 +114,10 @@ func libInit() {
 
 	fmt.Printf("Got traceid = %s....\n", traceIDVal)
 
+	if err != nil {
+		env.Set(globalSpan.Context().(jaeger.SpanContext))
+	}
+
 	initCupti()
 }
 
