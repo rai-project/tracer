@@ -10,6 +10,7 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/rai-project/tracer"
+	"github.com/rai-project/tracer/clibrary/env"
 	"github.com/rai-project/utils"
 	jaeger "github.com/uber/jaeger-client-go"
 
@@ -30,8 +31,8 @@ var (
 	CfgFile        string
 	tracerInitOnce sync.Once
 	globalSpan     opentracing.Span
-	globalCtx      context.Context
-	log            *logrus.Entry = logrus.New().WithField("pkg", "tracer/clibrary")
+	globalCtx      context.Context = context.Background()
+	log            *logrus.Entry   = logrus.New().WithField("pkg", "tracer/clibrary")
 )
 
 //export TracerSetLevel
@@ -81,10 +82,10 @@ func doTracerInit() {
 
 	config.Init(opts...)
 
-	tracer.ResetStd(
-		jaeger.TracerOptions.Injector(opentracing.HTTPHeaders, NewEnvPropagator(BaggagePrefix("rai:)"))),
-		jaeger.TracerOptions.Extractor(opentracing.HTTPHeaders, NewEnvPropagator(BaggagePrefix("rai:)"))),
-	)
+	// tracer.ResetStd(
+	// 	jaeger.TracerOptions.Injector(opentracing.HTTPHeaders, NewEnvPropagator(BaggagePrefix("rai:)"))),
+	// 	jaeger.TracerOptions.Extractor(opentracing.HTTPHeaders, NewEnvPropagator(BaggagePrefix("rai:)"))),
+	// )
 
 	tracer.SetLevel(tracer.FULL_TRACE)
 	libInit()
@@ -95,14 +96,23 @@ func initLib() {
 }
 
 func libInit() {
-	// pp.Println("initializing library2")
+	extraOpts := []opentracing.StartSpanOption{}
+
+	parentCtx, err := env.GetSpanContext()
+	if err == nil {
+		extraOpts = append(extraOpts, opentracing.ChildOf(parentCtx))
+	}
+
 	globalSpan, globalCtx = tracer.StartSpanFromContext(
-		context.Background(),
+		globalCtx,
 		tracer.APPLICATION_TRACE,
 		"c_tracing",
+		extraOpts...,
 	)
 
-	SetTraceEnv(globalSpan)
+	traceIDVal := globalSpan.Context().(jaeger.SpanContext).TraceID().String()
+
+	fmt.Printf("Got traceid = %s....\n", traceIDVal)
 
 	initCupti()
 }
