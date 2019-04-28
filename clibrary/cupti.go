@@ -1,4 +1,4 @@
-//+build linux,cupti
+// +build linux,cgo,cupti
 
 package main
 

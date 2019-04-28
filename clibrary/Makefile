@@ -1,7 +1,7 @@
 FIRST_GOPATH              := $(firstword $(subst :, ,$(GOPATH)))
 PKGS                      := $(shell go list ./... | grep -v /tests | grep -v /xcpb | grep -v /openpgp)
-GOFILES_NOVENDOR          := $(shell find . -name vendor -prune -o -type f -name '*.go' -not -name '*.pb.go' -print)
-GOFILES_BUILD             := $(shell find . -type f -name '*.go' -not -name '*_test.go')
+GOFILES_NOVENDOR          := #$(shell find . -name vendor -prune -o -type f -name '*.go' -not -name '*.pb.go' -print)
+GOFILES_BUILD             := #$(shell find . -type f -name '*.go' -not -name '*_test.go')
 RAI_TRACER_LIB_VERSION    ?= $(shell cat VERSION)
 RAI_TRACER_LIB_OUTPUT     ?= rai_tracer
 RAI_TRACER_LIB_REVISION   := $(shell cat COMMIT 2>/dev/null || git rev-parse --short=8 HEAD)

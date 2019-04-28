@@ -5,7 +5,6 @@ import "C"
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sync"
 
@@ -30,6 +29,8 @@ var (
 	AppSecret      string
 	CfgFile        string
 	tracerInitOnce sync.Once
+	globalSpan     opentracing.Span
+	globalCtx      context.Context
 	log            *logrus.Entry = logrus.New().WithField("pkg", "tracer/clibrary")
 )
 
@@ -81,8 +82,8 @@ func doTracerInit() {
 	config.Init(opts...)
 
 	tracer.ResetStd(
-		TracerOptions.Injector(opentracing.HTTPHeaders, NewEnvPropagator(BaggagePrefix("rai:)"))),
-		TracerOptions.Extractor(opentracing.HTTPHeaders, NewEnvPropagator(BaggagePrefix("rai:)"))),
+		jaeger.TracerOptions.Injector(opentracing.HTTPHeaders, NewEnvPropagator(BaggagePrefix("rai:)"))),
+		jaeger.TracerOptions.Extractor(opentracing.HTTPHeaders, NewEnvPropagator(BaggagePrefix("rai:)"))),
 	)
 
 	tracer.SetLevel(tracer.FULL_TRACE)
@@ -101,12 +102,7 @@ func libInit() {
 		"c_tracing",
 	)
 
-	traceID := globalSpan.Context().(jaeger.SpanContext).TraceID()
-	traceIDVal := traceID.String()
-
-	tracer.Inject(globalSpan.Context(), envPropagatorName, traceIDVal)
-
-	os.Setenv(envPropagatorName+"_trace_id", traceIDVal)
+	SetTraceEnv(globalSpan)
 
 	initCupti()
 }

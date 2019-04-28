@@ -8,8 +8,11 @@ import (
 	jaeger "github.com/uber/jaeger-client-go"
 )
 
+// Option is a function that sets an option on Propagator
+type PropagatorOption func(propagator *Propagator)
+
 // BaggagePrefix is a function that sets baggage prefix on Propagator
-func BaggagePrefix(prefix string) Option {
+func BaggagePrefix(prefix string) PropagatorOption {
 	return func(propagator *Propagator) {
 		propagator.baggagePrefix = prefix
 	}
@@ -21,10 +24,10 @@ type Propagator struct {
 }
 
 // Baggage is by default enabled and uses prefix 'baggage-'.
-func NewEnvPropagator(opts ...Option) Propagator {
-	p := Propagator{baggagePrefix: "baggage-"}
+func NewEnvPropagator(opts ...PropagatorOption) *Propagator {
+	p := &Propagator{baggagePrefix: "baggage-"}
 	for _, opt := range opts {
-		opt(&p)
+		opt(p)
 	}
 	return p
 }

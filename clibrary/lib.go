@@ -9,7 +9,6 @@ import (
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math"
 	"strconv"
 	"sync"
@@ -17,13 +16,11 @@ import (
 	"unsafe"
 
 	"github.com/opentracing/opentracing-go"
-	jaeger "github.com/uber/jaeger-client-go"
 	"gitlab.com/NebulousLabs/fastrand"
 
 	"github.com/k0kubun/pp"
 	"github.com/rai-project/tracer"
 	_ "github.com/rai-project/tracer/jaeger"
-	"github.com/rai-project/utils"
 	// _ "github.com/rai-project/tracer/noop"
 	// _ "github.com/rai-project/tracer/zipkin"
 )
@@ -54,37 +51,7 @@ var (
 	contexts = &contextMap{
 		contexts: map[uintptr]context.Context{},
 	}
-	globalSpan opentracing.Span
-	globalCtx  context.Context
 )
-
-func libInit() {
-	// pp.Println("initializing library2")
-	globalSpan, globalCtx = tracer.StartSpanFromContext(
-		context.Background(),
-		tracer.APPLICATION_TRACE,
-		"c_tracing",
-	)
-	initCupti()
-}
-
-func libDeinit() {
-	if false {
-		pp.Println("deinit")
-	}
-	deinitCupti()
-	if globalSpan != nil {
-		globalSpan.Finish()
-		pp.Println("closing global span")
-
-		traceID := globalSpan.Context().(jaeger.SpanContext).TraceID()
-		traceIDVal := traceID.String()
-
-		ip, _ := utils.GetExternalIp()
-		pp.Println(fmt.Sprintf("http://%s:16686/trace/%v", ip, traceIDVal))
-
-	}
-}
 
 //go:nosplit
 func (s *spanMap) Add(sp *spanInfo) uintptr {
