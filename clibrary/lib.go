@@ -58,6 +58,34 @@ var (
 	globalCtx  context.Context
 )
 
+func libInit() {
+	// pp.Println("initializing library2")
+	globalSpan, globalCtx = tracer.StartSpanFromContext(
+		context.Background(),
+		tracer.APPLICATION_TRACE,
+		"c_tracing",
+	)
+	initCupti()
+}
+
+func libDeinit() {
+	if false {
+		pp.Println("deinit")
+	}
+	deinitCupti()
+	if globalSpan != nil {
+		globalSpan.Finish()
+		pp.Println("closing global span")
+
+		traceID := globalSpan.Context().(jaeger.SpanContext).TraceID()
+		traceIDVal := traceID.String()
+
+		ip, _ := utils.GetExternalIp()
+		pp.Println(fmt.Sprintf("http://%s:16686/trace/%v", ip, traceIDVal))
+
+	}
+}
+
 //go:nosplit
 func (s *spanMap) Add(sp *spanInfo) uintptr {
 	s.Lock()

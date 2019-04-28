@@ -687,5 +687,8 @@ paket-files/
 # End of https://www.gitignore.io/api/go,vim,c++,java,cuda,python,eclipse,intellij,sublimetext,visualstudio,visualstudiocode
 
 main
+<<<<<<< HEAD
 
 example_trace.json
+=======
+>>>>>>> 042549b70652ed4332f7c243445c949432af65fd
