@@ -44,6 +44,7 @@ func TracerInit() {
 }
 
 func doTracerInit() {
+	pp.Println("initializing library")
 	log.Level = logrus.DebugLevel
 	config.AfterInit(func() {
 		log = logger.New().WithField("pkg", "tracer/clibrary")
