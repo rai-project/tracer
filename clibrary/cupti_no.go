@@ -1,4 +1,4 @@
-//+build !linux nocupti
+//+build !linux cupti
 
 package main
 
