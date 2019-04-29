@@ -116,9 +116,9 @@ func libInit() {
 
 	if err != nil {
 		env.Set(globalSpan.Context().(jaeger.SpanContext))
+		initCupti()
 	}
 
-	initCupti()
 }
 
 func libDeinit() {
