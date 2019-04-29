@@ -23,12 +23,12 @@ func initCupti() {
 	if runtime.GOOS != "linux" {
 		return
 	}
-	enableCupti := cast.ToBool(os.Getenv("CUPTI_TRACE")) || cast.ToBool(os.Getenv("CUDA_TRACE"))
+	enableCupti := cast.ToBool(os.Getenv("CUPTI_TRACE")) // || cast.ToBool(os.Getenv("CUDA_TRACE"))
 	if !enableCupti {
 		return
 	}
 
-	// pp.Println("initializing cupti")
+	pp.Println("initializing cupti")
 
 	cu, err := cupti.New(cupti.Context(globalCtx), cupti.SamplingPeriod(0))
 	if err != nil {

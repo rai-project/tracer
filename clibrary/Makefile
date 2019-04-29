@@ -67,6 +67,13 @@ $(RAI_TRACER_LIB_OUTPUT)-linux: $(GOFILES_NOVENDOR)
 	# @GOOS=linux GOARCH=amd64 $(GO) build -o dist/Linux-x86-64/lib$(RAI_TRACER_LIB_OUTPUT).$(RAI_TRACER_SHARED_LIB_SUFFIX) $(BUILDSHAREDFLAGS) $^
 	@printf '%s\n' '$(OK)'
 
+$(RAI_TRACER_LIB_OUTPUT)-linux-cupti: $(GOFILES_NOVENDOR)
+	@echo -n ">> CROSSCOMPILE linux GOOS=linux GOARCH=amd64 $(CGO_CFLAGS) $(GO) build -tags cupti -v -o dist/Linux-x86-64/lib$(RAI_TRACER_LIB_OUTPUT)-cupti.$(RAI_TRACER_STATIC_LIB_SUFFIX) $(BUILDSTATICFLAGS) $^"
+	@GOOS=linux GOARCH=amd64 $(CGO_CFLAGS) $(GO) build -tags cupti -o dist/Linux-x86-64/lib$(RAI_TRACER_LIB_OUTPUT)-cupti.$(RAI_TRACER_STATIC_LIB_SUFFIX) $(BUILDSTATICFLAGS) $^
+	# @echo -n ">> CROSSCOMPILE linux GOOS=linux GOARCH=amd64 $(CGO_CFLAGS) $(GO) build -v -o dist/Linux-x86-64/lib$(RAI_TRACER_LIB_OUTPUT).$(RAI_TRACER_SHARED_LIB_SUFFIX) $(BUILDSHAREDFLAGS) $^"
+	# @GOOS=linux GOARCH=amd64 $(GO) build -o dist/Linux-x86-64/lib$(RAI_TRACER_LIB_OUTPUT).$(RAI_TRACER_SHARED_LIB_SUFFIX) $(BUILDSHAREDFLAGS) $^
+	@printf '%s\n' '$(OK)'
+
 $(RAI_TRACER_LIB_OUTPUT)-windows: $(GOFILES_NOVENDOR)
 	@echo -n ">> CROSSCOMPILE windows"
 	@GOOS=windows GOARCH=amd64 CC=i686-w64-mingw32-gcc $(CGO_CFLAGS) $(GO) build -o dist/Windows-x86-64/$@.dll $(BUILDFLAGS)
