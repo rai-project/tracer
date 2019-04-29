@@ -3,10 +3,14 @@ package chrome
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"time"
 
+	"github.com/Unknwon/com"
 	"github.com/imdario/mergo"
+	"github.com/pkg/errors"
 	"github.com/rai-project/tracer/convert"
+	cnv "github.com/rai-project/tracer/convert"
 	model "github.com/uber/jaeger/model/json"
 )
 
@@ -22,6 +26,28 @@ func Marshal(trace model.Trace) ([]byte, error) {
 		return nil, err
 	}
 	return json.MarshalIndent(tr, "", "  ")
+}
+
+func ConvertFile(path string) ([]byte, error) {
+
+	if !com.IsFile(path) {
+		return nil, errors.Errorf("trace %v does not exist", path)
+	}
+	bts, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to read trace from %v", path)
+	}
+
+	trace := cnv.TraceInformation{}
+	err = json.Unmarshal(bts, &trace)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to parse trace")
+	}
+	bts, err = Marshal(trace.Traces[0])
+	if err != nil {
+		return nil, err
+	}
+	return bts, nil
 }
 
 func Convert(tr model.Trace) (*Trace, error) {
