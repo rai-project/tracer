@@ -3,6 +3,7 @@ package chrome
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -84,7 +85,11 @@ func (t Trace) Publish(ctx context.Context, lvl tracer.Level, opts ...opentracin
 
 	for _, event := range t.TraceEvents {
 		id := event.ID()
-		if event.EventType == "B" {
+		eventType := strings.ToUpper(event.EventType)
+		if eventType != "B" && eventType != "E" {
+			continue
+		}
+		if eventType == "B" {
 			tags := opentracing.Tags{
 				"category":   event.Category,
 				"process_id": event.ProcessID,

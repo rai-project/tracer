@@ -75,10 +75,10 @@ func newConvertState(tr model.Trace) (*convertState, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = tree.FilterOnlyChildrenOf("deepscope")
-	if err != nil {
-		return nil, err
-	}
+	// _, err = tree.FilterOnlyChildrenOf("deepscope")
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	jaegerTrace, err := tree.FixParentRelationship()
 	if err != nil {
