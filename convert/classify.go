@@ -9,7 +9,9 @@ import (
 
 var (
 	operationClassifications = map[string]Classification{
+		"deepscope":   ClassificationDeepScope,
 		"api_request": ClassificationAPIRequest,
+		"api_tracing": ClassificationAPITracing,
 		"/mlmodelscope.org.dlframework.Predict/Open":  ClassificationOpen,
 		"/mlmodelscope.org.dlframework.Predict/URLs":  ClassificationURLs,
 		"/mlmodelscope.org.dlframework.Predict/Close": ClassificationClose,
@@ -26,6 +28,18 @@ func FrameworkLayerIndex(sp model.Span) (int, error) {
 		return -1, errors.New("not a framework layer")
 	}
 	return strconv.Atoi(e)
+}
+
+func isAPISpan(sp model.Span) bool {
+	val := getSpanTagByKey(sp, "library_name")
+	if val == nil {
+		return false
+	}
+	e, ok := val.(string)
+	if !ok {
+		return false
+	}
+	return e != ""
 }
 
 func isLayerSpan(sp model.Span) bool {
@@ -47,6 +61,11 @@ func Classify(sp model.Span) string {
 	}
 	if isLayerSpan(sp) {
 		return ClassificationFrameworkLayer.String()
+	}
+	if isAPISpan(sp) {
+		if e, ok := getSpanTagByKey(sp, "library_name").(string); ok {
+			return e
+		}
 	}
 	return ClassificationUnknown.String()
 }

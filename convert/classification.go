@@ -6,7 +6,9 @@ type Classification int
 
 const (
 	ClassificationGenericAPI Classification = iota + 1
+	ClassificationDeepScope
 	ClassificationAPIRequest
+	ClassificationAPITracing
 	ClassificationOpen
 	ClassificationURLs
 	ClassificationClose
