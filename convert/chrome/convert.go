@@ -49,11 +49,8 @@ func newConvertState(tr model.Trace) (*convertState, error) {
 	if err != nil {
 		return nil, err
 	}
-<<<<<<< HEAD
-	_, err = tree.FilterOnlyChildrenOf("c_tracing")
-=======
-	_, err = tree.FilterOnlyChildrenOf("evaluate_predictions")
->>>>>>> 042549b70652ed4332f7c243445c949432af65fd
+
+	_, err = tree.FilterOnlyChildrenOf("deepscope")
 	if err != nil {
 		return nil, err
 	}

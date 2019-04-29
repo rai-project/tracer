@@ -8,9 +8,9 @@ import (
 	"fmt"
 )
 
-const _ClassificationName = "ClassificationGenericAPIClassificationAPIRequestClassificationOpenClassificationURLsClassificationCloseClassificationFrameworkLayer"
+const _ClassificationName = "ClassificationGenericAPIClassificationAPIRequestClassificationAPITracingClassificationOpenClassificationURLsClassificationCloseClassificationFrameworkLayer"
 
-var _ClassificationIndex = [...]uint8{0, 24, 48, 66, 84, 103, 131}
+var _ClassificationIndex = [...]uint8{0, 24, 48, 72, 90, 108, 127, 155}
 
 func (i Classification) String() string {
 	i -= 1
@@ -20,15 +20,16 @@ func (i Classification) String() string {
 	return _ClassificationName[_ClassificationIndex[i]:_ClassificationIndex[i+1]]
 }
 
-var _ClassificationValues = []Classification{1, 2, 3, 4, 5, 6}
+var _ClassificationValues = []Classification{1, 2, 3, 4, 5, 6, 7}
 
 var _ClassificationNameToValueMap = map[string]Classification{
 	_ClassificationName[0:24]:    1,
 	_ClassificationName[24:48]:   2,
-	_ClassificationName[48:66]:   3,
-	_ClassificationName[66:84]:   4,
-	_ClassificationName[84:103]:  5,
-	_ClassificationName[103:131]: 6,
+	_ClassificationName[48:72]:   3,
+	_ClassificationName[72:90]:   4,
+	_ClassificationName[90:108]:  5,
+	_ClassificationName[108:127]: 6,
+	_ClassificationName[127:155]: 7,
 }
 
 // ClassificationString retrieves an enum value from the enum constants string name.

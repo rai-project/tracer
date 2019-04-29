@@ -8,9 +8,9 @@ import (
 	"fmt"
 )
 
-const _LevelName = "NO_TRACEAPPLICATION_TRACEMODEL_TRACEFRAMEWORK_TRACELIBRARY_TRACEHARDWARE_TRACEFULL_TRACE"
+const _LevelName = "NO_TRACEAPPLICATION_TRACEMODEL_TRACEFRAMEWORK_TRACEML_LIBRARY_TRACESYSTEM_LIBRARY_TRACEHARDWARE_TRACEFULL_TRACE"
 
-var _LevelIndex = [...]uint8{0, 8, 25, 36, 51, 64, 78, 88}
+var _LevelIndex = [...]uint8{0, 8, 25, 36, 51, 67, 87, 101, 111}
 
 func (i Level) String() string {
 	if i < 0 || i >= Level(len(_LevelIndex)-1) {
@@ -19,16 +19,17 @@ func (i Level) String() string {
 	return _LevelName[_LevelIndex[i]:_LevelIndex[i+1]]
 }
 
-var _LevelValues = []Level{0, 1, 2, 3, 4, 5, 6}
+var _LevelValues = []Level{0, 1, 2, 3, 4, 5, 6, 7}
 
 var _LevelNameToValueMap = map[string]Level{
-	_LevelName[0:8]:   0,
-	_LevelName[8:25]:  1,
-	_LevelName[25:36]: 2,
-	_LevelName[36:51]: 3,
-	_LevelName[51:64]: 4,
-	_LevelName[64:78]: 5,
-	_LevelName[78:88]: 6,
+	_LevelName[0:8]:     0,
+	_LevelName[8:25]:    1,
+	_LevelName[25:36]:   2,
+	_LevelName[36:51]:   3,
+	_LevelName[51:67]:   4,
+	_LevelName[67:87]:   5,
+	_LevelName[87:101]:  6,
+	_LevelName[101:111]: 7,
 }
 
 // LevelString retrieves an enum value from the enum constants string name.
