@@ -9,6 +9,7 @@ const (
 	ClassificationDeepScope
 	ClassificationAPIRequest
 	ClassificationAPITracing
+	ClassificationMXNetCAPI
 	ClassificationOpen
 	ClassificationURLs
 	ClassificationClose

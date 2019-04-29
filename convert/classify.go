@@ -54,10 +54,25 @@ func isLayerSpan(sp model.Span) bool {
 	return e != ""
 }
 
+func isMXNETCAPISpan(sp model.Span) bool {
+	val := getSpanTagByKey(sp, "category")
+	if val == nil {
+		return false
+	}
+	e, ok := val.(string)
+	if !ok {
+		return false
+	}
+	return e == "MXNET_C_API"
+}
+
 func Classify(sp model.Span) string {
 	operationName := sp.OperationName
 	if val, ok := operationClassifications[operationName]; ok {
 		return val.String()
+	}
+	if isMXNETCAPISpan(sp) {
+		return ClassificationMXNetCAPI.String()
 	}
 	if isLayerSpan(sp) {
 		return ClassificationFrameworkLayer.String()

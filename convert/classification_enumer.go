@@ -8,9 +8,9 @@ import (
 	"fmt"
 )
 
-const _ClassificationName = "ClassificationGenericAPIClassificationAPIRequestClassificationAPITracingClassificationOpenClassificationURLsClassificationCloseClassificationFrameworkLayer"
+const _ClassificationName = "ClassificationGenericAPIClassificationDeepScopeClassificationAPIRequestClassificationAPITracingClassificationMXNetCAPIClassificationOpenClassificationURLsClassificationCloseClassificationFrameworkLayer"
 
-var _ClassificationIndex = [...]uint8{0, 24, 48, 72, 90, 108, 127, 155}
+var _ClassificationIndex = [...]uint8{0, 24, 47, 71, 95, 118, 136, 154, 173, 201}
 
 func (i Classification) String() string {
 	i -= 1
@@ -20,16 +20,18 @@ func (i Classification) String() string {
 	return _ClassificationName[_ClassificationIndex[i]:_ClassificationIndex[i+1]]
 }
 
-var _ClassificationValues = []Classification{1, 2, 3, 4, 5, 6, 7}
+var _ClassificationValues = []Classification{1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 var _ClassificationNameToValueMap = map[string]Classification{
 	_ClassificationName[0:24]:    1,
-	_ClassificationName[24:48]:   2,
-	_ClassificationName[48:72]:   3,
-	_ClassificationName[72:90]:   4,
-	_ClassificationName[90:108]:  5,
-	_ClassificationName[108:127]: 6,
-	_ClassificationName[127:155]: 7,
+	_ClassificationName[24:47]:   2,
+	_ClassificationName[47:71]:   3,
+	_ClassificationName[71:95]:   4,
+	_ClassificationName[95:118]:  5,
+	_ClassificationName[118:136]: 6,
+	_ClassificationName[136:154]: 7,
+	_ClassificationName[154:173]: 8,
+	_ClassificationName[173:201]: 9,
 }
 
 // ClassificationString retrieves an enum value from the enum constants string name.
