@@ -1,10 +1,11 @@
+// +build ignore
 // +build cgo,darwin
 
 package observer
 
 import (
 	"github.com/nicolai86/instruments"
-	"github.com/opentracing-contrib/go-observer"
+	otobserver "github.com/opentracing-contrib/go-observer"
 	opentracing "github.com/opentracing/opentracing-go"
 )
 
