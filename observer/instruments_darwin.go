@@ -1,5 +1,4 @@
-// +build ignore
-// +build cgo,darwin
+// +build cgo,darwin,instruments
 
 package observer
 
