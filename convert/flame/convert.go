@@ -2,10 +2,14 @@ package flame
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"sort"
 	"time"
 
+	"github.com/Unknwon/com"
+	"github.com/pkg/errors"
 	"github.com/rai-project/tracer/convert"
+	cnv "github.com/rai-project/tracer/convert"
 	model "github.com/uber/jaeger/model/json"
 )
 
@@ -122,4 +126,26 @@ func (st *convertState) convertSpans(rootNode *Node, root convert.Interval, dept
 	}
 
 	return nd
+}
+
+func ConvertTraceFile(path string) ([]byte, error) {
+
+	if !com.IsFile(path) {
+		return nil, errors.Errorf("trace %v does not exist", path)
+	}
+	bts, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to read trace from %v", path)
+	}
+
+	trace := cnv.TraceInformation{}
+	err = json.Unmarshal(bts, &trace)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to parse trace")
+	}
+	bts, err = Marshal(trace.Traces[0])
+	if err != nil {
+		return nil, err
+	}
+	return bts, nil
 }

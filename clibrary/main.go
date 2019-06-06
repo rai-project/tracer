@@ -116,8 +116,10 @@ func libInit() {
 
 	if err != nil {
 		env.Set(globalSpan.Context().(jaeger.SpanContext))
-		initCupti()
 	}
+
+	// a problem would occur when c and python would initialize cupti
+	initCupti()
 
 }
 
