@@ -92,10 +92,10 @@ func (t IntervalTree) DepthOf(sp Interval) int {
 	for {
 		visited[parent.SpanID] = true
 		parent = t.ParentOf(parent)
-		if visited[parent.SpanID] {
+		if parent.IsNil() {
 			return ii
 		}
-		if parent.IsNil() {
+		if visited[parent.SpanID] {
 			return ii
 		}
 		ii++
