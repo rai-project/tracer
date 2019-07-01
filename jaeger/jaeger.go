@@ -105,7 +105,7 @@ func (t *Tracer) Init(serviceName string, opts ...tracer.Option) error {
 		jaeger.TracerOptions.Gen128Bit(true),
 		// Zipkin shares span ID between client and server spans; it must be enabled via the following option.
 		jaeger.TracerOptions.ZipkinSharedRPCSpan(true),
-    jaeger.TracerOptions.MaxTagValueLength(1024),
+		jaeger.TracerOptions.MaxTagValueLength(1024),
 		// jaeger.TracerOptions.PoolSpans(true),
 	}
 
