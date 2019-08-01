@@ -147,11 +147,11 @@ func (st *convertState) convertSpan(idx int, sp model.Span) ([]TraceEvent, error
 	// 	EventType: "X",
 	// }
 	begin := TraceEvent{
-		EventType: "B",
+		EventType: "b",
 		Timestamp: formatTime(sp.StartTime),
 	}
 	end := TraceEvent{
-		EventType: "E",
+		EventType: "e",
 		Timestamp: formatTime(sp.StartTime + sp.Duration),
 	}
 

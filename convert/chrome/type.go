@@ -2,6 +2,7 @@ package chrome
 
 import (
 	"math"
+	"strings"
 	"time"
 
 	"github.com/apex/log"
@@ -144,7 +145,7 @@ func (x Trace) DeleteIgnoredEvents() (Trace, error) {
 	events := TraceEvents{}
 	for _, event := range x.TraceEvents { // assumes that there is only one thing to ignore
 		if event.Category == "ignore" {
-			if event.EventType == "E" {
+			if strings.ToUpper(event.EventType) == "E" {
 				adjustedEvent = event
 			}
 		}
@@ -174,7 +175,7 @@ func (x Trace) DeleteIgnoredEvents() (Trace, error) {
 		// 	continue
 		// }
 
-		if event.EventType == "B" || event.EventType == "E" {
+		if strings.ToUpper(event.EventType) == "B" || strings.ToUpper(event.EventType) == "E" {
 			if event.Time.After(adjustedEvent.Time) {
 				event.Time = event.Time.Add(-durationOf(adjustedEvent))
 				event.Timestamp = event.Timestamp - float64(durationOf(adjustedEvent))/float64(timeUnit)
@@ -204,7 +205,7 @@ func (x Trace) MaxEvent() TraceEvent {
 		if event.Category == "ignore" {
 			continue
 		}
-		if event.EventType != "E" {
+		if strings.ToUpper(event.EventType) != "E" {
 			continue
 		}
 		if maxTimeStamp < event.Timestamp {
@@ -222,7 +223,7 @@ func (x Trace) MinEvent() TraceEvent {
 		if event.Category == "ignore" {
 			continue
 		}
-		if event.EventType != "B" {
+		if strings.ToUpper(event.EventType) != "B" {
 			continue
 		}
 		if minTimeStamp > event.Timestamp {
@@ -245,7 +246,7 @@ func (x Trace) ZeroOut() Trace {
 func (x Trace) AddTimestampOffset(ts int64) Trace {
 	events := make([]TraceEvent, len(x.TraceEvents))
 	for ii, event := range x.TraceEvents {
-		if event.EventType == "B" || event.EventType == "E" {
+		if strings.ToUpper(event.EventType) == "B" || strings.ToUpper(event.EventType) == "E" {
 			event.Timestamp = event.Timestamp + float64(ts)
 			event.Start = event.Start + ts
 			event.End = event.End + ts
@@ -259,7 +260,7 @@ func (x Trace) AddTimestampOffset(ts int64) Trace {
 func (x Trace) AddDurationOffset(td time.Duration) Trace {
 	events := make([]TraceEvent, len(x.TraceEvents))
 	for ii, event := range x.TraceEvents {
-		if event.EventType == "B" || event.EventType == "E" {
+		if strings.ToUpper(event.EventType) == "B" || strings.ToUpper(event.EventType) == "E" {
 			event.Time = event.Time.Add(td)
 			event.StartTime = event.StartTime.Add(td)
 			event.EndTime = event.EndTime.Add(td)
