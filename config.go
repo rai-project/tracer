@@ -8,7 +8,7 @@ import (
 
 type tracerConfig struct {
 	Enabled     bool          `json:"enabled" config:"tracer.enabled" default:"true"`
-	Provider    string        `json:"provider" config:"tracer.provider" default:"zipkin"`
+	Provider    string        `json:"provider" config:"tracer.provider" default:"jaeger"`
 	LevelString string        `json:"level" config:"tracer.level"`
 	Level       Level         `json:"-" config:"-"`
 	done        chan struct{} `json:"-" config:"-"`
