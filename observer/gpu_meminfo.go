@@ -35,7 +35,7 @@ type gpuMemInfo struct {
 func newGPUMemInfo() *gpuMemInfo {
 	err := nvml.Init()
 	if err != nil {
-		panic(pp.Sprint("failed to init nvml = ", err))
+		return nil
 	}
 
 	count, err := nvml.DeviceCount()
@@ -59,7 +59,10 @@ func newGPUMemInfo() *gpuMemInfo {
 
 // OnStartSpan creates a new gpuMemInfo for the span
 func (o *gpuMemInfo) OnStartSpan(sp opentracing.Span, operationName string, options opentracing.StartSpanOptions) (otobserver.SpanObserver, bool) {
-	if operationName != "Predict" {
+  if o == nil {
+    return nil, false 
+  }
+  if operationName != "Predict" {
 		return nil, false
 	}
 	return newGPUMemInfoSpan(o, sp, options)
