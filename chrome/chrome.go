@@ -89,6 +89,7 @@ func (t Trace) Publish(ctx context.Context, lvl tracer.Level, opts ...opentracin
 		if eventType != "B" && eventType != "E" {
 			continue
 		}
+
 		if eventType == "B" {
 			tags := opentracing.Tags{
 				"category":   event.Category,

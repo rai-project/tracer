@@ -56,6 +56,9 @@ func NewFromName(serviceName, backendName string, options ...Option) (Tracer, er
 	if err != nil {
 		return nil, err
 	}
+	if tr == nil {
+		return nil, errors.New("nil tracer")
+	}
 	openTracers.Store(tr.ID(), tr)
 	return tr, nil
 }

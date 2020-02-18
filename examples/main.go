@@ -13,18 +13,25 @@ import (
 )
 
 var (
-	log  *logrus.Entry
-	conf = `tracer:
+	log   *logrus.Entry
+	conf2 = `tracer:
   enabled: true
   backend: zipkin
   endpoints:
     - http://localhost:9411/api/v1/spans
 `
+	conf = `tracer:
+  enabled: true
+  provider: jaeger
+  endpoints:
+    - localhost
+  level: FULL_TRACE
+`
 )
 
 func uServiceCall1(ctx context.Context) context.Context {
 	time.Sleep(time.Millisecond * 125) // slow startup
-	span, ctx := tracer.StartSpanFromContext(ctx, "service call 1")
+	span, ctx := tracer.StartSpanFromContext(ctx, tracer.APPLICATION_TRACE, "service call 1")
 	defer span.Finish()
 
 	time.Sleep(time.Millisecond * 333) // some local work
@@ -36,7 +43,7 @@ func uServiceCall1(ctx context.Context) context.Context {
 
 func uServiceCall2(ctx context.Context) context.Context {
 	time.Sleep(time.Millisecond * 125) // slow startup
-	span, ctx := tracer.StartSpanFromContext(ctx, "service call 2")
+	span, ctx := tracer.StartSpanFromContext(ctx, tracer.APPLICATION_TRACE, "service call 2")
 	defer span.Finish()
 
 	time.Sleep(time.Millisecond * 333) // some local work
@@ -62,11 +69,11 @@ func main() {
 
 	// Create some demo segments
 	ctx := context.Background()
-	rootSg, ctx := tracer.StartSpanFromContext(ctx, "root_segment")
+	rootSg, ctx := tracer.StartSpanFromContext(ctx, tracer.APPLICATION_TRACE, "root_segment")
 	defer rootSg.Finish()
 	time.Sleep(time.Millisecond * 500)
 
-	childSg, _ := tracer.StartSpanFromContext(ctx, "child_segment")
+	childSg, _ := tracer.StartSpanFromContext(ctx, tracer.APPLICATION_TRACE, "child_segment")
 	time.Sleep(time.Second)
 	childSg.Finish()
 
@@ -78,7 +85,7 @@ func init() {
 		config.VerboseMode(true),
 		config.DebugMode(true),
 		config.ColorMode(true),
-		config.AppName("rai"),
+		config.AppName("carml"),
 		config.ConfigString(conf),
 	)
 }
